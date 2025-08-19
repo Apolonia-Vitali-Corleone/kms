@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: 知识管理系统 API
+  version: 1.0.0
+  description: 后台统一接口文档（JWT，分页/排序/错误码统一约定）
+servers:
+  - url: http://192.168.233.129:8088/api/v1
+    description: 运行在192.168.233.129上
+
+tags:
+  - name: Category # 演示资源；照此新增其它资源
