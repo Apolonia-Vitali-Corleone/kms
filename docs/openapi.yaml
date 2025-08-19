@@ -1,0 +1,280 @@
+openapi: 3.0.1
+info:
+  title: KMS API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /tags:
+    get:
+      summary: List tags
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagListResp'
+  /visibilities:
+    get:
+      summary: List visibilities
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisibilityListResp'
+  /knowledge:
+    get:
+      summary: Page query knowledge
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+        - in: query
+          name: title
+          schema:
+            type: string
+        - in: query
+          name: keywords
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgePageResp'
+    post:
+      summary: Create knowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeCreateReq'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResp'
+  /knowledge/{id}:
+    get:
+      summary: Get knowledge
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeResp'
+    put:
+      summary: Update knowledge
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeUpdateReq'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResp'
+    delete:
+      summary: Delete knowledge
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResp'
+  /files/upload:
+    post:
+      summary: Upload files
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StringArrayResp'
+components:
+  schemas:
+    OkResp:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          nullable: true
+    StringArrayResp:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            type: string
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        remark:
+          type: string
+    Visibility:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        remark:
+          type: string
+    Knowledge:
+      type: object
+      properties:
+        id:
+          type: string
+        categoryName:
+          type: string
+        title:
+          type: string
+        tagName:
+          type: string
+        visibilityName:
+          type: string
+        keywords:
+          type: string
+        status:
+          type: integer
+          enum: [0,1]
+        summary:
+          type: string
+        questionNo:
+          type: integer
+        content:
+          type: string
+        attachments:
+          type: string
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    TagListResp:
+      allOf:
+        - $ref: '#/components/schemas/OkResp'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tag'
+    VisibilityListResp:
+      allOf:
+        - $ref: '#/components/schemas/OkResp'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Visibility'
+    KnowledgeResp:
+      allOf:
+        - $ref: '#/components/schemas/OkResp'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Knowledge'
+    KnowledgePageResp:
+      allOf:
+        - $ref: '#/components/schemas/OkResp'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                total:
+                  type: integer
+                page:
+                  type: integer
+                pageSize:
+                  type: integer
+                records:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Knowledge'
+    KnowledgeCreateReq:
+      type: object
+      properties:
+        categoryName: {type: string}
+        title: {type: string}
+        tagName: {type: string}
+        visibilityName: {type: string}
+        keywords: {type: string}
+        status: {type: integer, enum: [0,1]}
+        summary: {type: string}
+        questionNo: {type: integer}
+        content: {type: string}
+        attachments: {type: string}
+        createdBy: {type: string}
+      required: [categoryName,title,tagName,visibilityName,status,questionNo,content]
+    KnowledgeUpdateReq:
+      allOf:
+        - $ref: '#/components/schemas/KnowledgeCreateReq'
