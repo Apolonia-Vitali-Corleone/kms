@@ -1,10 +1,10 @@
 import http from './http'
 
-export function pageKnowledge(params) {
+export function getKnowledgeList(params) {
   return http.get('/knowledge', { params })
 }
 
-export function getOne(id) {
+export function getKnowledge(id) {
   return http.get(`/knowledge/${id}`)
 }
 
@@ -18,6 +18,10 @@ export function updateKnowledge(id, data) {
 
 export function deleteKnowledge(id) {
   return http.delete(`/knowledge/${id}`)
+}
+
+export function batchDeleteKnowledge(ids) {
+  return http.delete('/knowledge', { data: { ids } })
 }
 
 export function uploadFiles(files) {

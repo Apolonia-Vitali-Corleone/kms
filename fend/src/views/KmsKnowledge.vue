@@ -16,6 +16,9 @@
         <span class="custom-tree-node" slot-scope="{ node, data }">
           <span>{{ data.name }}</span>
           <span class="tree-actions">
+            <el-tooltip content="查看" placement="top">
+              <i class="el-icon-view" @click.stop="viewCategory(data)"></i>
+            </el-tooltip>
             <el-tooltip content="新增" placement="top">
               <i class="el-icon-plus" @click.stop="openCategoryDialog(data)"></i>
             </el-tooltip>
@@ -207,11 +210,27 @@
       <el-button type="primary" @click="submitKnowledge">确定</el-button>
     </div>
   </el-dialog>
+
+  <!-- Category Detail Dialog -->
+  <el-dialog title="类目详情" :visible.sync="categoryDetailDialogVisible">
+    <el-form label-width="80px">
+      <el-form-item label="名称">{{ categoryDetail.name }}</el-form-item>
+      <el-form-item label="备注">{{ categoryDetail.remark }}</el-form-item>
+    </el-form>
+  </el-dialog>
+
+  <!-- Knowledge Detail Dialog -->
+  <el-dialog title="知识详情" :visible.sync="knowledgeDetailDialogVisible" width="60%">
+    <h3>{{ knowledgeDetail.title }}</h3>
+    <div v-html="knowledgeDetail.content"></div>
+  </el-dialog>
   </div>
 </template>
 
 <script>
 import http from '../api/http'
+import { getKnowledgeList, getKnowledge, createKnowledge, updateKnowledge, deleteKnowledge as deleteKnowledgeApi, batchDeleteKnowledge } from '../api/knowledge'
+import { getCategory } from '../api/category'
 
 export default {
   name: 'KmsKnowledge',
@@ -244,24 +263,28 @@ export default {
       multipleSelection: [],
       knowledgeDialogVisible: false,
       knowledgeDialogTitle: '',
-      knowledgeForm: {
-        id: null,
-        category_id: null,
-        title: '',
-        tags: '',
-        keywords: '',
-        status: 1,
-        knowledge_type: 'Q',
-        question_no: 1,
-        summary: '',
-        content: '',
-        attachments: []
+        knowledgeForm: {
+          id: null,
+          category_id: null,
+          title: '',
+          tags: '',
+          keywords: '',
+          status: 1,
+          knowledge_type: 'Q',
+          question_no: 1,
+          summary: '',
+          content: '',
+          attachments: []
+        },
+        categoryDetailDialogVisible: false,
+        categoryDetail: {},
+        knowledgeDetailDialogVisible: false,
+        knowledgeDetail: {}
       }
-    }
-  },
-  mounted () {
-    this.fetchCategoryTree()
-  },
+    },
+    mounted () {
+      this.fetchCategoryTree()
+    },
   methods: {
     async fetchCategoryTree () {
       try {
@@ -361,7 +384,7 @@ export default {
         created_to: this.queryForm.created && this.queryForm.created[1]
       }
       try {
-        const data = await http.post('/knowledge/page', params)
+        const data = await getKnowledgeList(params)
         this.tableData = data.records
         this.pagination.total = data.total
       } catch (e) {
@@ -393,15 +416,31 @@ export default {
     openAttachmentDialog (row) {
       this.openKnowledgeDialog(row)
     },
-    viewKnowledge (row) {
-      this.$alert(row.content, row.title)
+    async viewKnowledge (row) {
+      try {
+        this.knowledgeDetail = await getKnowledge(row.id)
+        this.knowledgeDetailDialogVisible = true
+      } catch (e) {
+        this.$message.error(e.message)
+      }
+    },
+    async viewCategory (data) {
+      try {
+        this.categoryDetail = await getCategory(data.id)
+        this.categoryDetailDialogVisible = true
+      } catch (e) {
+        this.$message.error(e.message)
+      }
     },
     async submitKnowledge () {
       this.$refs.knowledgeForm.validate(async valid => {
         if (!valid) return
         try {
-          const url = this.knowledgeForm.id ? '/knowledge/update' : '/knowledge/create'
-          await http.post(url, this.knowledgeForm)
+          if (this.knowledgeForm.id) {
+            await updateKnowledge(this.knowledgeForm.id, this.knowledgeForm)
+          } else {
+            await createKnowledge(this.knowledgeForm)
+          }
           this.$message.success('操作成功')
           this.knowledgeDialogVisible = false
           this.fetchList()
@@ -413,7 +452,7 @@ export default {
     async deleteKnowledge (row) {
       this.$confirm('确定删除该知识吗？', '提示', { type: 'warning' }).then(async () => {
         try {
-          await http.post('/knowledge/delete', { id: row.id })
+          await deleteKnowledgeApi(row.id)
           this.$message.success('删除成功')
           this.fetchList()
         } catch (e) {
@@ -426,7 +465,7 @@ export default {
       const ids = this.multipleSelection.map(i => i.id)
       this.$confirm(`确定删除选中的 ${ids.length} 条知识吗？`, '提示', { type: 'warning' }).then(async () => {
         try {
-          await http.post('/knowledge/batch_delete', { ids })
+          await batchDeleteKnowledge(ids)
           this.$message.success('删除成功')
           this.fetchList()
         } catch (e) {
