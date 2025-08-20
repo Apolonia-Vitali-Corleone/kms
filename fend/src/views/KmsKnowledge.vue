@@ -154,7 +154,7 @@
           <el-input v-model="categoryForm.name"></el-input>
         </el-form-item>
         <el-form-item label="父级" v-if="showParentSelect">
-          <el-select v-model="categoryForm.parent_id" placeholder="请选择">
+          <el-select v-model="categoryForm.parentId" placeholder="请选择">
             <el-option :value="null" label="根类目"></el-option>
             <el-option
                 v-for="item in flatCategories"
@@ -288,7 +288,7 @@ export default {
       categoryForm: {
         id: null,
         name: '',
-        parent_id: null,
+        parentId: null,
         recommend: 0,
         status: 1,
         remark: ''
@@ -373,7 +373,7 @@ export default {
       this.categoryForm = {
         id: null,
         name: '',
-        parent_id: parent ? parent.id : null,
+        parentId: parent ? parent.id : null,
         recommend: 0,
         status: 1,
         remark: ''
@@ -382,7 +382,11 @@ export default {
     },
     renameCategory(data) {
       this.categoryDialogTitle = '重命名类目'
-      this.categoryForm = Object.assign({}, data)
+      this.categoryForm = {
+        ...data,
+        parentId: data.parentId || data.parent_id || null
+      }
+      delete this.categoryForm.parent_id
       this.showParentSelect = true
       this.categoryDialogVisible = true
     },
