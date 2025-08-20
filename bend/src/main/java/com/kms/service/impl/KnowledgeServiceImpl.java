@@ -12,6 +12,8 @@ import com.kms.service.KnowledgeService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
 @Service
 public class KnowledgeServiceImpl implements KnowledgeService {
 
@@ -22,7 +24,9 @@ public class KnowledgeServiceImpl implements KnowledgeService {
     }
 
     @Override
-    public PageResp<KnowledgeDO> page(PageReq req, String title, String keywords, Integer status) {
+    public PageResp<KnowledgeDO> page(PageReq req, String title, String keywords, Integer status,
+                                      String categoryName, String tagName, String visibilityName,
+                                      Integer questionNo, LocalDate startDate, LocalDate endDate) {
         QueryWrapper<KnowledgeDO> qw = new QueryWrapper<>();
         if (title != null && !title.isEmpty()) {
             qw.like("title", title);
@@ -32,6 +36,24 @@ public class KnowledgeServiceImpl implements KnowledgeService {
         }
         if (status != null) {
             qw.eq("status", status);
+        }
+        if (categoryName != null && !categoryName.isEmpty()) {
+            qw.eq("category_name", categoryName);
+        }
+        if (tagName != null && !tagName.isEmpty()) {
+            qw.eq("tag_name", tagName);
+        }
+        if (visibilityName != null && !visibilityName.isEmpty()) {
+            qw.eq("visibility_name", visibilityName);
+        }
+        if (questionNo != null) {
+            qw.eq("question_no", questionNo);
+        }
+        if (startDate != null) {
+            qw.ge("created_at", startDate.atStartOfDay());
+        }
+        if (endDate != null) {
+            qw.le("created_at", endDate.atTime(23, 59, 59));
         }
         Page<KnowledgeDO> page = knowledgeMapper.selectPage(new Page<>(req.getPage(), req.getPageSize()), qw);
         PageResp<KnowledgeDO> resp = new PageResp<>();
