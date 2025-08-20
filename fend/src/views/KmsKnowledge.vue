@@ -153,7 +153,7 @@
         <el-form-item label="名称" prop="name" :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]">
           <el-input v-model="categoryForm.name"></el-input>
         </el-form-item>
-        <el-form-item label="父级">
+        <el-form-item label="父级" v-if="showParentSelect">
           <el-select v-model="categoryForm.parent_id" placeholder="请选择">
             <el-option :value="null" label="根类目"></el-option>
             <el-option
@@ -293,6 +293,7 @@ export default {
         status: 1,
         remark: ''
       },
+      showParentSelect: false,
       queryForm: {
         keywords: '',
         status: undefined,
@@ -368,6 +369,7 @@ export default {
     },
     openCategoryDialog(parent) {
       this.categoryDialogTitle = parent ? '新增类目' : '新建类目'
+      this.showParentSelect = false
       this.categoryForm = {
         id: null,
         name: '',
@@ -381,6 +383,7 @@ export default {
     renameCategory(data) {
       this.categoryDialogTitle = '重命名类目'
       this.categoryForm = Object.assign({}, data)
+      this.showParentSelect = true
       this.categoryDialogVisible = true
     },
     async submitCategory() {
