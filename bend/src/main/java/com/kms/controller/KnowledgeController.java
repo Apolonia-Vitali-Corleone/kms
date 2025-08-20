@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/knowledge")
@@ -53,9 +54,14 @@ public class KnowledgeController {
         return R.ok();
     }
 
-    @DeleteMapping("/{id}")
-    public R<?> remove(@PathVariable Long id) {
-        knowledgeService.remove(id);
+    @DeleteMapping
+    public R<?> remove(@RequestBody List<Long> ids) {
+        // 如果只传一个id，也能兼容
+        if (ids.size() == 1) {
+            knowledgeService.remove(ids.get(0));
+        } else {
+            knowledgeService.removeBatch(ids);
+        }
         return R.ok();
     }
 }
