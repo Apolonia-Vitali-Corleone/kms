@@ -1,12 +1,12 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import KmsKnowledge from '../views/KmsKnowledge.vue'
+import KnowledgePage from '../views/KnowledgePage.vue'
 
 Vue.use(Router)
 
 export default new Router({
   routes: [
-    { path: '/', component: KmsKnowledge },
+    { path: '/', component: KnowledgePage },
     { path: '*', redirect: '/' }
   ]
 })
