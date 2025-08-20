@@ -1,4 +1,5 @@
 <template>
+  <div>
   <el-container class="kms-knowledge">
     <el-aside width="240px" class="kms-tree">
       <div class="tree-toolbar">
@@ -206,6 +207,7 @@
       <el-button type="primary" @click="submitKnowledge">确定</el-button>
     </div>
   </el-dialog>
+  </div>
 </template>
 
 <script>
