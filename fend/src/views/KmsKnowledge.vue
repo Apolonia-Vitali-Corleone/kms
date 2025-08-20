@@ -1,7 +1,7 @@
 <template>
   <div>
   <el-container class="kms-knowledge">
-    <el-aside width="240px" class="kms-tree">
+    <el-aside width="40%" class="kms-tree">
       <div class="tree-toolbar">
         <el-button type="primary" size="mini" @click="openCategoryDialog()">新建类目</el-button>
       </div>
@@ -24,12 +24,6 @@
             </el-tooltip>
             <el-tooltip content="删除" placement="top">
               <i class="el-icon-delete" @click.stop="deleteCategory(data)"></i>
-            </el-tooltip>
-            <el-tooltip content="上移" placement="top">
-              <i class="el-icon-arrow-up" @click.stop="moveCategory(data, 'up')"></i>
-            </el-tooltip>
-            <el-tooltip content="下移" placement="top">
-              <i class="el-icon-arrow-down" @click.stop="moveCategory(data, 'down')"></i>
             </el-tooltip>
             <el-switch
               v-model="data.status"
@@ -133,14 +127,20 @@
         </el-select>
       </el-form-item>
       
-      <el-form-item label="排序">
-        <el-input-number v-model="categoryForm.sort" :min="0"></el-input-number>
+      <el-form-item label="推荐">
+        <el-select v-model="categoryForm.recommend">
+          <el-option label="否" :value="0"></el-option>
+          <el-option label="是" :value="1"></el-option>
+        </el-select>
       </el-form-item>
       <el-form-item label="状态">
         <el-select v-model="categoryForm.status">
           <el-option label="启用" :value="1"></el-option>
           <el-option label="停用" :value="0"></el-option>
         </el-select>
+      </el-form-item>
+      <el-form-item label="备注">
+        <el-input v-model="categoryForm.remark"></el-input>
       </el-form-item>
     </el-form>
     <div slot="footer">
@@ -226,8 +226,9 @@ export default {
         id: null,
         name: '',
         parent_id: null,
-        sort: 0,
-        status: 1
+        recommend: 0,
+        status: 1,
+        remark: ''
       },
       queryForm: {
         keywords: '',
@@ -296,8 +297,9 @@ export default {
         id: null,
         name: '',
         parent_id: parent ? parent.id : null,
-        sort: 0,
-        status: 1
+        recommend: 0,
+        status: 1,
+        remark: ''
       }
       this.categoryDialogVisible = true
     },
@@ -330,14 +332,6 @@ export default {
           this.$message.error(e.message)
         }
       }).catch(() => {})
-    },
-    async moveCategory (data, direction) {
-      try {
-        await http.post('/category/sort', { id: data.id, direction })
-        this.fetchCategoryTree()
-      } catch (e) {
-        this.$message.error(e.message)
-      }
     },
     async toggleCategoryStatus (data) {
       try {
