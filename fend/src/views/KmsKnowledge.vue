@@ -55,6 +55,30 @@
               </el-select>
             </el-form-item>
             <el-form-item>
+              <el-input v-model="queryForm.categoryName" placeholder="分类名称"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-select v-model="queryForm.tagName" placeholder="标签" clearable>
+                <el-option
+                    v-for="item in tagOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.name"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-select v-model="queryForm.visibilityName" placeholder="可见性" clearable>
+                <el-option
+                    v-for="item in visibilityOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.name"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-input v-model.number="queryForm.questionNo" placeholder="问题序号"></el-input>
+            </el-form-item>
+            <el-form-item>
               <el-date-picker
                   v-model="queryForm.created"
                   type="daterange"
@@ -249,6 +273,8 @@ import {
   batchDeleteKnowledge
 } from '../api/knowledge'
 import {getCategory} from '../api/category'
+import {getAllTags} from '../api/tag'
+import {getAllVisibilities} from '../api/visibility'
 
 export default {
   name: 'KmsKnowledge',
@@ -270,8 +296,14 @@ export default {
       queryForm: {
         keywords: '',
         status: undefined,
+        categoryName: '',
+        tagName: '',
+        visibilityName: '',
+        questionNo: null,
         created: []
       },
+      tagOptions: [],
+      visibilityOptions: [],
       tableData: [],
       pagination: {
         page: 1,
@@ -302,6 +334,8 @@ export default {
   },
   mounted() {
     this.fetchCategoryTree()
+    this.loadTags()
+    this.loadVisibilities()
   },
   methods: {
     async fetchCategoryTree() {
@@ -385,7 +419,15 @@ export default {
       }
     },
     resetQuery() {
-      this.queryForm = {keywords: '', status: undefined, created: []}
+      this.queryForm = {
+        keywords: '',
+        status: undefined,
+        categoryName: '',
+        tagName: '',
+        visibilityName: '',
+        questionNo: null,
+        created: []
+      }
       this.pagination.page = 1
       this.fetchList()
     },
@@ -400,8 +442,12 @@ export default {
         category_id: this.currentCategoryId,
         status: this.queryForm.status,
         keywords: this.queryForm.keywords,
-        created_from: this.queryForm.created && this.queryForm.created[0],
-        created_to: this.queryForm.created && this.queryForm.created[1]
+        categoryName: this.queryForm.categoryName,
+        tagName: this.queryForm.tagName,
+        visibilityName: this.queryForm.visibilityName,
+        questionNo: this.queryForm.questionNo,
+        startDate: this.queryForm.created && this.queryForm.created[0],
+        endDate: this.queryForm.created && this.queryForm.created[1]
       }
       try {
         const data = await getKnowledgeList(params)
@@ -509,8 +555,12 @@ export default {
         category_id: this.currentCategoryId,
         status: this.queryForm.status,
         keywords: this.queryForm.keywords,
-        created_from: this.queryForm.created && this.queryForm.created[0],
-        created_to: this.queryForm.created && this.queryForm.created[1]
+        categoryName: this.queryForm.categoryName,
+        tagName: this.queryForm.tagName,
+        visibilityName: this.queryForm.visibilityName,
+        questionNo: this.queryForm.questionNo,
+        startDate: this.queryForm.created && this.queryForm.created[0],
+        endDate: this.queryForm.created && this.queryForm.created[1]
       }
       http.post('/knowledge/export', params, {responseType: 'blob'}).then(res => {
         const disposition = res.headers['content-disposition'] || ''
@@ -527,6 +577,22 @@ export default {
       }).catch(e => {
         this.$message.error(e.message)
       })
+    },
+
+    async loadTags() {
+      try {
+        this.tagOptions = await getAllTags() || []
+      } catch (e) {
+        this.$message.error(e.message)
+      }
+    },
+
+    async loadVisibilities() {
+      try {
+        this.visibilityOptions = await getAllVisibilities() || []
+      } catch (e) {
+        this.$message.error(e.message)
+      }
     },
 
     uploadAttachment(request) {
