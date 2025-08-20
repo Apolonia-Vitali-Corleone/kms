@@ -23,9 +23,3 @@ export function deleteKnowledge(id) {
 export function batchDeleteKnowledge(ids) {
   return http.delete('/knowledge', { data: { ids } })
 }
-
-export function uploadFiles(files) {
-  const form = new FormData()
-  files.forEach(f => form.append('files', f))
-  return http.post('/files/upload', form)
-}

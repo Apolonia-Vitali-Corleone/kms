@@ -27,7 +27,9 @@ CREATE TABLE `attachment` (
   `knowledge_id` bigint NOT NULL,
   `file_path` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '附件路径或URL',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_knowledge_id` (`knowledge_id`),
+  CONSTRAINT `fk_attachment_knowledge` FOREIGN KEY (`knowledge_id`) REFERENCES `knowledge` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -90,7 +92,6 @@ CREATE TABLE `knowledge` (
   `summary` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `question_no` int NOT NULL DEFAULT '1',
   `content` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `attachments` mediumtext COLLATE utf8mb4_unicode_ci,
   `created_by` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

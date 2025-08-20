@@ -145,6 +145,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StringArrayResp'
+  /attachment/upload:
+    post:
+      summary: Upload attachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+  /attachment/download:
+    get:
+      summary: Download attachment
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /attachment/delete:
+    post:
+      summary: Delete attachment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResp'
 components:
   schemas:
     OkResp:
@@ -185,6 +240,15 @@ components:
           type: string
         remark:
           type: string
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+        fileName:
+          type: string
+        url:
+          type: string
     Knowledge:
       type: object
       properties:
@@ -210,7 +274,9 @@ components:
         content:
           type: string
         attachments:
-          type: string
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
         createdBy:
           type: string
         createdAt:
@@ -272,7 +338,10 @@ components:
         summary: {type: string}
         questionNo: {type: integer}
         content: {type: string}
-        attachments: {type: string}
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
         createdBy: {type: string}
       required: [categoryName,title,tagName,visibilityName,status,questionNo,content]
     KnowledgeUpdateReq:
