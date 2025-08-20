@@ -90,14 +90,12 @@
 </template>
 
 <script>
+import http from '../api/http'
 export default {
   name: 'KnowledgePage',
   data () {
     return {
-      categories: [
-        { id: 1, name: '类目一', children: [{ id: 2, name: '子类目' }] },
-        { id: 3, name: '类目二' }
-      ],
+      categories: [],
       query: {
         category: null,
         title: '',
@@ -124,7 +122,18 @@ export default {
       ]
     }
   },
+  mounted () {
+    this.fetchCategories()
+  },
   methods: {
+    async fetchCategories () {
+      try {
+        const data = await http.get('/category/tree')
+        this.categories = data || []
+      } catch (e) {
+        this.$message.error(e.message)
+      }
+    },
     viewCategory (row) {
       this.$message.info(`查看 ${row.name}`)
     },
@@ -166,7 +175,7 @@ export default {
   height: 100%;
 }
 .category-panel {
-  width: 30%;
+  width: 40%;
   border-right: 1px solid #ebeef5;
   overflow-y: auto;
 }
