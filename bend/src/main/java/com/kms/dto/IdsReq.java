@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class IdReq {
+public class IdsReq {
     @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    private List<Long> ids;
 }

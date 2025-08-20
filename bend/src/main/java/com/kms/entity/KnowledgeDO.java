@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @TableName("knowledge")
@@ -23,7 +24,7 @@ public class KnowledgeDO {
     private String summary;
     private Integer questionNo;
     private String content;
-    private String attachments;
+    private List<String> attachments;
     private String createdBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

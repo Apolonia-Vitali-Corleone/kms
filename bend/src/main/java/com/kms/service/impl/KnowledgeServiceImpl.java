@@ -13,6 +13,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class KnowledgeServiceImpl implements KnowledgeService {
@@ -90,5 +91,11 @@ public class KnowledgeServiceImpl implements KnowledgeService {
     @Override
     public void remove(Long id) {
         knowledgeMapper.deleteById(id);
+    }
+
+    @Override
+    public void removeBatch(List<Long> ids) {
+        // MyBatis-Plus 提供的批量删除
+        knowledgeMapper.deleteBatchIds(ids);
     }
 }

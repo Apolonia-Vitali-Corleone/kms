@@ -7,6 +7,7 @@ import com.kms.dto.PageResp;
 import com.kms.entity.KnowledgeDO;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface KnowledgeService {
     PageResp<KnowledgeDO> page(PageReq req, String title, String keywords, Integer status,
@@ -16,4 +17,5 @@ public interface KnowledgeService {
     void create(KnowledgeCreateReq req);
     void update(Long id, KnowledgeUpdateReq req);
     void remove(Long id);
+    void removeBatch(List<Long> ids);
 }

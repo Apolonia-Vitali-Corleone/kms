@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Data
 public class KnowledgeCreateReq {
@@ -23,6 +24,8 @@ public class KnowledgeCreateReq {
     private Integer questionNo;
     @NotBlank
     private String content;
-    private String attachments;
+
+    private List<String> attachments;
+
     private String createdBy;
 }

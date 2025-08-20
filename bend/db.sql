@@ -16,6 +16,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `attachment`
+--
+
+DROP TABLE IF EXISTS `attachment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `attachment` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `knowledge_id` bigint NOT NULL,
+  `file_path` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '附件路径或URL',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `attachment`
+--
+
+LOCK TABLES `attachment` WRITE;
+/*!40000 ALTER TABLE `attachment` DISABLE KEYS */;
+/*!40000 ALTER TABLE `attachment` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `category`
 --
 
@@ -43,7 +68,7 @@ CREATE TABLE `category` (
 
 LOCK TABLES `category` WRITE;
 /*!40000 ALTER TABLE `category` DISABLE KEYS */;
-INSERT INTO `category` VALUES (1957666607081930753,'手机数码',0,0,0,'顶级类目','system','2025-08-19 04:51:05','2025-08-19 08:05:04'),(1957666607316811778,'家用电器',0,1,1,'顶级类目','system','2025-08-19 04:51:05','2025-08-19 08:05:04'),(1957666607321006081,'图书音像',0,0,0,'暂停中','system','2025-08-19 04:51:05','2025-08-19 08:04:54'),(1957667626675290113,'手机配件',1957666607081930753,1,1,'子类目','system','2025-08-19 04:55:08','2025-08-19 08:05:04'),(1957667626687873025,'智能穿戴',1957666607081930753,0,1,'子类目','system','2025-08-19 04:55:08','2025-08-19 04:55:08');
+INSERT INTO `category` VALUES (1957666607081930753,'哲学类',0,1,1,'顶级类目','system','2025-08-19 04:51:05','2025-08-20 10:14:08'),(1957667626675290113,'哲学',1957666607081930753,1,1,'子类目','system','2025-08-19 04:55:08','2025-08-20 10:14:17'),(1957667626687873025,'逻辑学',1957666607081930753,1,1,'子类目','system','2025-08-19 04:55:08','2025-08-20 10:14:36'),(1958110556594495489,'文学类',NULL,1,1,'',NULL,'2025-08-20 10:15:10','2025-08-20 10:15:10'),(1958119898840342529,'汉语言文学',1958110556594495489,0,1,'',NULL,'2025-08-20 10:52:18','2025-08-20 10:52:18'),(1958119956256169986,'历史学类',NULL,0,1,'',NULL,'2025-08-20 10:52:31','2025-08-20 10:52:42'),(1958120030310801410,'历史学',1958119956256169986,0,1,'',NULL,'2025-08-20 10:52:49','2025-08-20 10:52:49'),(1958120062124597249,'特殊历史学',1958120030310801410,0,1,'',NULL,'2025-08-20 10:52:57','2025-08-20 10:52:57');
 /*!40000 ALTER TABLE `category` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -79,7 +104,6 @@ CREATE TABLE `knowledge` (
 
 LOCK TABLES `knowledge` WRITE;
 /*!40000 ALTER TABLE `knowledge` DISABLE KEYS */;
-INSERT INTO `knowledge` VALUES (1001,'CategoryA','Knowledge 1','Tag1','Public','k1,k2',1,'Summary 1',1,'Content 1','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1002,'CategoryA','Knowledge 2','Tag2','Public','k1,k2',1,'Summary 2',2,'Content 2','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1003,'CategoryA','Knowledge 3','Tag3','Public','k1,k2',1,'Summary 3',3,'Content 3','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1004,'CategoryA','Knowledge 4','Tag4','Public','k1,k2',1,'Summary 4',4,'Content 4','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1005,'CategoryA','Knowledge 5','Tag5','Public','k1,k2',1,'Summary 5',5,'Content 5','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1006,'CategoryB','Knowledge 6','Tag6','Private','k1,k2',1,'Summary 6',6,'Content 6','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1007,'CategoryB','Knowledge 7','Tag7','Private','k1,k2',1,'Summary 7',7,'Content 7','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1008,'CategoryB','Knowledge 8','Tag8','Private','k1,k2',1,'Summary 8',8,'Content 8','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1009,'CategoryB','Knowledge 9','Tag9','Private','k1,k2',1,'Summary 9',9,'Content 9','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1010,'CategoryB','Knowledge 10','Tag10','Private','k1,k2',1,'Summary 10',10,'Content 10','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1011,'CategoryC','Knowledge 11','Tag11','Team','k1,k2',1,'Summary 11',11,'Content 11','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1012,'CategoryC','Knowledge 12','Tag12','Team','k1,k2',1,'Summary 12',12,'Content 12','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1013,'CategoryC','Knowledge 13','Tag13','Team','k1,k2',1,'Summary 13',13,'Content 13','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1014,'CategoryC','Knowledge 14','Tag14','Team','k1,k2',1,'Summary 14',14,'Content 14','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1015,'CategoryC','Knowledge 15','Tag15','Team','k1,k2',1,'Summary 15',15,'Content 15','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1016,'CategoryD','Knowledge 16','Tag16','Dept','k1,k2',1,'Summary 16',16,'Content 16','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1017,'CategoryD','Knowledge 17','Tag17','Dept','k1,k2',1,'Summary 17',17,'Content 17','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1018,'CategoryD','Knowledge 18','Tag18','Dept','k1,k2',1,'Summary 18',18,'Content 18','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1019,'CategoryD','Knowledge 19','Tag19','Dept','k1,k2',1,'Summary 19',19,'Content 19','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55'),(1020,'CategoryD','Knowledge 20','Tag20','Dept','k1,k2',1,'Summary 20',20,'Content 20','[]','admin','2025-08-19 10:06:55','2025-08-19 10:06:55');
 /*!40000 ALTER TABLE `knowledge` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -146,4 +170,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-20  3:01:26
+-- Dump completed on 2025-08-20 11:23:51

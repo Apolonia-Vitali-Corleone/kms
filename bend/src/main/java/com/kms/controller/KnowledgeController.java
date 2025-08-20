@@ -1,6 +1,7 @@
 package com.kms.controller;
 
 import com.kms.common.R;
+import com.kms.dto.IdsReq;
 import com.kms.dto.KnowledgeCreateReq;
 import com.kms.dto.KnowledgeUpdateReq;
 import com.kms.dto.PageReq;
@@ -54,14 +55,17 @@ public class KnowledgeController {
         return R.ok();
     }
 
+    @DeleteMapping("/{id}")
+    public R<?> removeOne(@PathVariable Long id) {
+        knowledgeService.remove(id);
+        return R.ok();
+    }
+
     @DeleteMapping
-    public R<?> remove(@RequestBody List<Long> ids) {
-        // 如果只传一个id，也能兼容
-        if (ids.size() == 1) {
-            knowledgeService.remove(ids.get(0));
-        } else {
-            knowledgeService.removeBatch(ids);
-        }
+    public R<?> removeBatch(@RequestBody IdsReq req) {
+        List<Long> ids = (req == null) ? null : req.getIds();
+        if (ids == null || ids.isEmpty()) return R.error(500, "ids不能为空");
+        knowledgeService.removeBatch(ids);
         return R.ok();
     }
 }
