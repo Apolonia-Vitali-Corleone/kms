@@ -211,17 +211,7 @@
 </template>
 
 <script>
-import axios from 'axios'
-const BASE_URL = 'http://localhost:19989'
-const api = axios.create({ baseURL: BASE_URL })
-
-function handleResponse (res) {
-  if (res.data && res.data.code === 0) {
-    return res.data
-  } else {
-    throw new Error(res.data ? res.data.message : '网络错误')
-  }
-}
+import http from '../api/http'
 
 export default {
   name: 'KmsKnowledge',
@@ -274,9 +264,8 @@ export default {
   methods: {
     async fetchCategoryTree () {
       try {
-        const res = await api.get('/api/category/tree')
-        const data = handleResponse(res)
-        this.categoryTree = data.data || []
+        const data = await http.get('/category/tree')
+        this.categoryTree = data || []
         this.flatCategories = []
         const walk = (nodes) => {
           nodes.forEach(n => {
@@ -321,9 +310,8 @@ export default {
       this.$refs.categoryForm.validate(async valid => {
         if (!valid) return
         try {
-          const url = this.categoryForm.id ? '/api/category/update' : '/api/category/create'
-          const res = await api.post(url, this.categoryForm)
-          handleResponse(res)
+          const url = this.categoryForm.id ? '/category/update' : '/category/create'
+          await http.post(url, this.categoryForm)
           this.$message.success('操作成功')
           this.categoryDialogVisible = false
           this.fetchCategoryTree()
@@ -335,8 +323,7 @@ export default {
     async deleteCategory (data) {
       this.$confirm('确定删除该类目吗？', '提示', { type: 'warning' }).then(async () => {
         try {
-          const res = await api.post('/api/category/delete', { id: data.id })
-          handleResponse(res)
+          await http.post('/category/delete', { id: data.id })
           this.$message.success('删除成功')
           this.fetchCategoryTree()
         } catch (e) {
@@ -346,8 +333,7 @@ export default {
     },
     async moveCategory (data, direction) {
       try {
-        const res = await api.post('/api/category/sort', { id: data.id, direction })
-        handleResponse(res)
+        await http.post('/category/sort', { id: data.id, direction })
         this.fetchCategoryTree()
       } catch (e) {
         this.$message.error(e.message)
@@ -355,8 +341,7 @@ export default {
     },
     async toggleCategoryStatus (data) {
       try {
-        const res = await api.post('/api/category/status', { id: data.id, status: data.status })
-        handleResponse(res)
+        await http.post('/category/status', { id: data.id, status: data.status })
         this.$message.success('操作成功')
       } catch (e) {
         this.$message.error(e.message)
@@ -382,8 +367,7 @@ export default {
         created_to: this.queryForm.created && this.queryForm.created[1]
       }
       try {
-        const res = await api.post('/api/knowledge/page', params)
-        const data = handleResponse(res).data
+        const data = await http.post('/knowledge/page', params)
         this.tableData = data.records
         this.pagination.total = data.total
       } catch (e) {
@@ -422,9 +406,8 @@ export default {
       this.$refs.knowledgeForm.validate(async valid => {
         if (!valid) return
         try {
-          const url = this.knowledgeForm.id ? '/api/knowledge/update' : '/api/knowledge/create'
-          const res = await api.post(url, this.knowledgeForm)
-          handleResponse(res)
+          const url = this.knowledgeForm.id ? '/knowledge/update' : '/knowledge/create'
+          await http.post(url, this.knowledgeForm)
           this.$message.success('操作成功')
           this.knowledgeDialogVisible = false
           this.fetchList()
@@ -436,8 +419,7 @@ export default {
     async deleteKnowledge (row) {
       this.$confirm('确定删除该知识吗？', '提示', { type: 'warning' }).then(async () => {
         try {
-          const res = await api.post('/api/knowledge/delete', { id: row.id })
-          handleResponse(res)
+          await http.post('/knowledge/delete', { id: row.id })
           this.$message.success('删除成功')
           this.fetchList()
         } catch (e) {
@@ -450,8 +432,7 @@ export default {
       const ids = this.multipleSelection.map(i => i.id)
       this.$confirm(`确定删除选中的 ${ids.length} 条知识吗？`, '提示', { type: 'warning' }).then(async () => {
         try {
-          const res = await api.post('/api/knowledge/batch_delete', { ids })
-          handleResponse(res)
+          await http.post('/knowledge/batch_delete', { ids })
           this.$message.success('删除成功')
           this.fetchList()
         } catch (e) {
@@ -467,7 +448,7 @@ export default {
         created_from: this.queryForm.created && this.queryForm.created[0],
         created_to: this.queryForm.created && this.queryForm.created[1]
       }
-      api.post('/api/knowledge/export', params, { responseType: 'blob' }).then(res => {
+      http.post('/knowledge/export', params, { responseType: 'blob' }).then(res => {
         const disposition = res.headers['content-disposition'] || ''
         let filename = 'knowledge.xlsx'
         const match = disposition.match(/filename="?([^";]+)"?/)
@@ -486,10 +467,9 @@ export default {
     uploadAttachment (request) {
       const formData = new FormData()
       formData.append('file', request.file)
-      api.post('/api/attachment/upload', formData, {
+      http.post('/attachment/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
-      }).then(res => {
-        const data = handleResponse(res).data
+      }).then(data => {
         this.knowledgeForm.attachments.push({
           file_id: data.file_id,
           file_name: data.file_name,
@@ -503,11 +483,10 @@ export default {
       })
     },
     downloadAttachment (file) {
-      window.open(`${BASE_URL}/api/attachment/download?id=${file.file_id}`)
+      window.open(`${http.defaults.baseURL}/attachment/download?id=${file.file_id}`)
     },
     removeAttachment (file, fileList) {
-      api.post('/api/attachment/delete', { id: file.file_id }).then(res => {
-        handleResponse(res)
+      http.post('/attachment/delete', { id: file.file_id }).then(() => {
         this.$message.success('删除成功')
         this.knowledgeForm.attachments = fileList
       }).catch(e => {
