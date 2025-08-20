@@ -6,6 +6,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
+import com.kms.dto.AttachmentDTO;
+
 @Data
 public class KnowledgeCreateReq {
     @NotBlank
@@ -25,7 +27,7 @@ public class KnowledgeCreateReq {
     @NotBlank
     private String content;
 
-    private List<String> attachments;
+    private List<AttachmentDTO> attachments;
 
     private String createdBy;
 }

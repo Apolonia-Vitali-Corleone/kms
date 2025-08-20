@@ -1,5 +1,6 @@
 package com.kms.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -8,6 +9,8 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.kms.dto.AttachmentDTO;
 
 @Data
 @TableName("knowledge")
@@ -24,7 +27,8 @@ public class KnowledgeDO {
     private String summary;
     private Integer questionNo;
     private String content;
-    private List<String> attachments;
+    @TableField(exist = false)
+    private List<AttachmentDTO> attachments;
     private String createdBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

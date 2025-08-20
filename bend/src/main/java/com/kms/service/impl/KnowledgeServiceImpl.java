@@ -6,6 +6,7 @@ import com.kms.dto.KnowledgeCreateReq;
 import com.kms.dto.KnowledgeUpdateReq;
 import com.kms.dto.PageReq;
 import com.kms.dto.PageResp;
+import com.kms.service.AttachmentService;
 import com.kms.entity.KnowledgeDO;
 import com.kms.mapper.KnowledgeMapper;
 import com.kms.service.KnowledgeService;
@@ -19,9 +20,11 @@ import java.util.List;
 public class KnowledgeServiceImpl implements KnowledgeService {
 
     private final KnowledgeMapper knowledgeMapper;
+    private final AttachmentService attachmentService;
 
-    public KnowledgeServiceImpl(KnowledgeMapper knowledgeMapper) {
+    public KnowledgeServiceImpl(KnowledgeMapper knowledgeMapper, AttachmentService attachmentService) {
         this.knowledgeMapper = knowledgeMapper;
+        this.attachmentService = attachmentService;
     }
 
     @Override
@@ -67,7 +70,11 @@ public class KnowledgeServiceImpl implements KnowledgeService {
 
     @Override
     public KnowledgeDO get(Long id) {
-        return knowledgeMapper.selectById(id);
+        KnowledgeDO entity = knowledgeMapper.selectById(id);
+        if (entity != null) {
+            entity.setAttachments(attachmentService.listByKnowledgeId(id));
+        }
+        return entity;
     }
 
     @Override
@@ -75,6 +82,7 @@ public class KnowledgeServiceImpl implements KnowledgeService {
         KnowledgeDO entity = new KnowledgeDO();
         BeanUtils.copyProperties(req, entity);
         knowledgeMapper.insert(entity);
+        attachmentService.saveBatch(entity.getId(), req.getAttachments());
     }
 
     @Override
@@ -86,10 +94,13 @@ public class KnowledgeServiceImpl implements KnowledgeService {
         BeanUtils.copyProperties(req, entity);
         entity.setId(id);
         knowledgeMapper.updateById(entity);
+        attachmentService.removeByKnowledgeId(id);
+        attachmentService.saveBatch(id, req.getAttachments());
     }
 
     @Override
     public void remove(Long id) {
+        attachmentService.removeByKnowledgeId(id);
         knowledgeMapper.deleteById(id);
     }
 
@@ -97,5 +108,8 @@ public class KnowledgeServiceImpl implements KnowledgeService {
     public void removeBatch(List<Long> ids) {
         // MyBatis-Plus 提供的批量删除
         knowledgeMapper.deleteBatchIds(ids);
+        for (Long id : ids) {
+            attachmentService.removeByKnowledgeId(id);
+        }
     }
 }

@@ -275,6 +275,11 @@ import {
 import {getCategory} from '../api/category'
 import {getAllTags} from '../api/tag'
 import {getAllVisibilities} from '../api/visibility'
+import {
+  uploadAttachment as apiUploadAttachment,
+  deleteAttachment as apiDeleteAttachment,
+  downloadAttachment as apiDownloadAttachment
+} from '../api/attachment'
 
 export default {
   name: 'KmsKnowledge',
@@ -603,14 +608,10 @@ export default {
     },
 
     uploadAttachment(request) {
-      const formData = new FormData()
-      formData.append('file', request.file)
-      http.post('/attachment/upload', formData, {
-        headers: {'Content-Type': 'multipart/form-data'}
-      }).then(data => {
+      apiUploadAttachment(request.file).then(data => {
         this.knowledgeForm.attachments.push({
-          file_id: data.file_id,
-          file_name: data.file_name,
+          file_id: data.id,
+          file_name: data.fileName,
           size: data.size,
           url: data.url
         })
@@ -622,11 +623,19 @@ export default {
     },
 
     downloadAttachment(file) {
-      window.open(`${http.defaults.baseURL}/attachment/download?id=${file.file_id}`)
+      apiDownloadAttachment(file.file_id).then(res => {
+        const blob = new Blob([res.data])
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = file.file_name
+        a.click()
+        window.URL.revokeObjectURL(url)
+      })
     },
 
     removeAttachment(file, fileList) {
-      http.post('/attachment/delete', {id: file.file_id}).then(() => {
+      apiDeleteAttachment(file.file_id).then(() => {
         this.$message.success('删除成功')
         this.knowledgeForm.attachments = fileList
       }).catch(e => {
