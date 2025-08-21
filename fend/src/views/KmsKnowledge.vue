@@ -51,10 +51,10 @@
         <div class="filter-bar" ref="filterBar">
 
           <el-form :inline="true" :model="queryForm" label-width="0">
-
-            <!-- 多选类目：绑定到数组 -->
-            <el-form-item>
-              <el-select v-model="queryForm.categoryNames" placeholder="关联类目" multiple
+            <el-form-item size="medium">
+              <el-tag>关联类目</el-tag>
+              <!-- 多选类目：绑定到数组 -->
+              <el-select v-model="queryForm.categoryNames" placeholder="请选择关联类目" multiple
                          filterable
                          class="full-tags">
                 <el-option v-for="item in relatedCategories" :key="item.id" :label="item.name" :value="item.name"/>
@@ -62,11 +62,14 @@
             </el-form-item>
 
             <el-form-item>
-              <el-input v-model="queryForm.title" placeholder="标题"></el-input>
+              <el-tag>标题</el-tag>
+              <el-input v-model="queryForm.title" placeholder="请输入标题" style="width: 220px; margin-left:8px;" />
             </el-form-item>
 
+
             <el-form-item>
-              <el-select v-model="queryForm.tagName" placeholder="标签" clearable>
+              <el-tag>标签</el-tag>
+              <el-select v-model="queryForm.tagName" placeholder="请选择标签" clearable>
                 <el-option
                     v-for="item in tagOptions"
                     :key="item.id"
@@ -77,6 +80,7 @@
             </el-form-item>
 
             <el-form-item>
+              <el-tag>请选择状态</el-tag>
               <el-select v-model="queryForm.status" placeholder="状态" clearable>
                 <el-option label="启用" :value="1"></el-option>
                 <el-option label="停用" :value="0"></el-option>
@@ -84,22 +88,32 @@
             </el-form-item>
 
             <el-form-item>
-              <el-input v-model="queryForm.visibilityName" placeholder="可见度"></el-input>
+              <el-tag>请选择可见度</el-tag>
+              <el-select v-model="queryForm.visibilityName" placeholder="请选择标签" clearable>
+                <el-option
+                    v-for="item in tagOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.name">
+                </el-option>
+              </el-select>
             </el-form-item>
 
             <el-form-item>
-              <el-input v-model.number="queryForm.questionNo" placeholder="问题序号"></el-input>
+              <el-tag>问题序号</el-tag>
+            </el-form-item>
+            <el-form-item>
+              <el-input v-model.number="queryForm.questionNo" placeholder="请输入问题序号"></el-input>
             </el-form-item>
 
-
+            <el-form-item>
+              <el-tag>创建时间</el-tag>
+            </el-form-item>
             <el-form-item>
               <el-date-picker
                   v-model="queryForm.created"
-                  type="daterange"
-                  range-separator="至"
-                  start-placeholder="开始日期"
-                  end-placeholder="结束日期"
-                  value-format="yyyy-MM-dd">
+                  type="date"
+                  placeholder="请选择创建时间">
               </el-date-picker>
             </el-form-item>
 
@@ -321,6 +335,7 @@ export default {
   name: 'KmsKnowledge',
   data() {
     return {
+
       relatedCategories: [],
       tableHeight: 400, // 先声明为响应式，避免 warn
 
@@ -421,6 +436,7 @@ export default {
         this.$message.error(e.message)
       }
     },
+
     computeHeight() {
       // 取表格真实顶部位置
       const tableEl = this.$refs.table && this.$refs.table.$el
@@ -473,6 +489,7 @@ export default {
       this.pagination.page = 1
       this.fetchList()
     },
+
     openCategoryDialog(parent) {
       this.categoryDialogTitle = parent ? '新增类目' : '新建类目'
       this.showParentSelect = false
@@ -486,6 +503,7 @@ export default {
       }
       this.categoryDialogVisible = true
     },
+
     renameCategory(data) {
       this.categoryDialogTitle = '重命名类目'
       this.categoryForm = {
@@ -496,6 +514,7 @@ export default {
       this.showParentSelect = true
       this.categoryDialogVisible = true
     },
+
     async submitCategory() {
       this.$refs.categoryForm.validate(async valid => {
         if (!valid) return
@@ -505,11 +524,13 @@ export default {
           this.$message.success('操作成功')
           this.categoryDialogVisible = false
           this.fetchCategoryTree()
+          this.loadRelatedCategories()
         } catch (e) {
           this.$message.error(e.message)
         }
       })
     },
+
     async deleteCategory(data) {
       this.$confirm('确定删除该类目吗？', '提示', {type: 'warning'}).then(async () => {
         try {
@@ -522,6 +543,7 @@ export default {
       }).catch(() => {
       })
     },
+
     async toggleCategoryStatus(data) {
       try {
         await http.post('/category/status', {id: data.id, status: data.status})
@@ -531,6 +553,7 @@ export default {
         data.status = data.status === 1 ? 0 : 1
       }
     },
+
     resetQuery() {
       this.queryForm = {
         keywords: '',

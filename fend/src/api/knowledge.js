@@ -8,6 +8,12 @@ export function getKnowledge(id) {
   return http.get(`/knowledge/${id}`)
 }
 
+export function search(id) {
+  return http.post(`/knowledge/search`)
+}
+
+
+
 export function createKnowledge(data) {
   return http.post('/knowledge', data)
 }
