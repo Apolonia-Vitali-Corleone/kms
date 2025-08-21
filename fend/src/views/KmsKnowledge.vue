@@ -232,6 +232,9 @@
         <el-form-item label="问题序号">
           <el-input-number v-model="knowledgeForm.questionNo" :min="1"></el-input-number>
         </el-form-item>
+        <el-form-item label="创建人">
+          <el-input v-model="knowledgeForm.createdBy"></el-input>
+        </el-form-item>
         <el-form-item label="摘要">
           <el-input type="textarea" v-model="knowledgeForm.summary"></el-input>
         </el-form-item>
@@ -337,6 +340,7 @@ export default {
         keywords: '',
         status: 1,
         questionNo: 1,
+        createdBy: '',
         summary: '',
         content: '',
         attachments: []
@@ -485,8 +489,10 @@ export default {
         this.knowledgeDialogTitle = '编辑知识'
         this.knowledgeForm = Object.assign({}, row, {
           attachments: (row.attachments || []).map(a => ({
-            ...a,
-            name: a.fileName
+            id: a.id,
+            name: a.fileName || a.name,
+            url: a.url,
+            size: a.size
           }))
         })
       } else {
@@ -501,6 +507,7 @@ export default {
           keywords: '',
           status: 1,
           questionNo: this.tableData.length + 1,
+          createdBy: '',
           summary: '',
           content: '',
           attachments: []
@@ -539,7 +546,7 @@ export default {
             ...this.knowledgeForm,
             attachments: (this.knowledgeForm.attachments || []).map(a => ({
               id: a.id,
-              fileName: a.fileName || a.name,
+              fileName: a.name || a.fileName,
               url: a.url
             }))
           }
@@ -632,13 +639,13 @@ export default {
 
     uploadAttachment(request) {
       apiUploadAttachment(request.file).then(data => {
+        request.onSuccess(data, request.file)
         this.knowledgeForm.attachments.push({
           id: data.id,
-          fileName: data.fileName,
+          name: data.name,
           url: data.url,
-          name: data.fileName
+          size: data.size
         })
-        request.onSuccess()
       }).catch(err => {
         this.$message.error(err.message)
         request.onError()
@@ -662,9 +669,9 @@ export default {
         this.$message.success('删除成功')
         this.knowledgeForm.attachments = fileList.map(f => ({
           id: f.id,
-          fileName: f.fileName || f.name,
+          name: f.name,
           url: f.url,
-          name: f.name
+          size: f.size
         }))
       }).catch(e => {
         this.$message.error(e.message)
