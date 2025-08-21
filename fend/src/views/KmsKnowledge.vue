@@ -127,7 +127,6 @@
               <el-button type="text" size="small" @click="viewKnowledge(scope.row)">查看</el-button>
               <el-button type="text" size="small" @click="openKnowledgeDialog(scope.row)">编辑</el-button>
               <el-button type="text" size="small" @click="deleteKnowledge(scope.row)">删除</el-button>
-              <el-button type="text" size="small" @click="openAttachmentDialog(scope.row)">附件</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -484,17 +483,23 @@ export default {
       }
     },
 
-    openKnowledgeDialog(row) {
+    async openKnowledgeDialog(row) {
       if (row && row.id) {
         this.knowledgeDialogTitle = '编辑知识'
-        this.knowledgeForm = Object.assign({}, row, {
-          attachments: (row.attachments || []).map(a => ({
-            id: a.id,
-            name: a.fileName || a.name,
-            url: a.url,
-            size: a.size
-          }))
-        })
+        try {
+          const data = await getKnowledge(row.id)
+          this.knowledgeForm = Object.assign({}, data, {
+            attachments: (data.attachments || []).map(a => ({
+              id: a.id,
+              name: a.fileName || a.name,
+              url: a.url,
+              size: a.size
+            }))
+          })
+        } catch (e) {
+          this.$message.error(e.message)
+          return
+        }
       } else {
         this.knowledgeDialogTitle = '新增知识'
         const current = this.flatCategories.find(c => c.id === this.currentCategoryId)
@@ -514,10 +519,6 @@ export default {
         }
       }
       this.knowledgeDialogVisible = true
-    },
-
-    openAttachmentDialog(row) {
-      this.openKnowledgeDialog(row)
     },
 
     async viewKnowledge(row) {
