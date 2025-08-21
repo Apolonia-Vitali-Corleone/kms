@@ -638,7 +638,12 @@ export default {
     },
 
     uploadAttachment(request) {
-      apiUploadAttachment(request.file).then(data => {
+      if (!this.knowledgeForm.id) {
+        this.$message.error('请先保存知识')
+        request.onError()
+        return
+      }
+      apiUploadAttachment(request.file, this.knowledgeForm.id).then(data => {
         request.onSuccess(data, request.file)
         this.knowledgeForm.attachments.push({
           id: data.id,

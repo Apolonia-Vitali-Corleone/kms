@@ -34,7 +34,8 @@ public class AttachmentController {
     }
 
     @PostMapping("/upload")
-    public AttachmentUploadResp upload(@RequestPart("file") MultipartFile file) throws IOException {
+    public AttachmentUploadResp upload(@RequestPart("file") MultipartFile file,
+                                       @RequestParam("knowledgeId") Long knowledgeId) throws IOException {
         Path dir = Paths.get(uploadDir);
         if (!Files.exists(dir)) {
             Files.createDirectories(dir);
@@ -44,7 +45,7 @@ public class AttachmentController {
         file.transferTo(dest.toFile());
         AttachmentDTO dto = new AttachmentDTO();
         dto.setUrl(filename);
-        attachmentService.saveBatch(null, Collections.singletonList(dto));
+        attachmentService.saveBatch(knowledgeId, Collections.singletonList(dto));
         AttachmentUploadResp resp = new AttachmentUploadResp();
         resp.setId(dto.getId());
         resp.setName(filename);
