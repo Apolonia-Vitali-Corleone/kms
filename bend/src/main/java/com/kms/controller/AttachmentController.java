@@ -56,7 +56,7 @@ public class AttachmentController {
 
     @GetMapping("/download")
     public ResponseEntity<FileSystemResource> download(@RequestParam("id") Long id) {
-        AttachmentDTO dto = attachmentService.getById(id);
+        AttachmentDTO dto = attachmentService.getByKId(id);
         if (dto == null) {
             return ResponseEntity.notFound().build();
         }
@@ -74,7 +74,7 @@ public class AttachmentController {
     @PostMapping("/delete")
     public void delete(@RequestBody Map<String, String> req) throws IOException {
         String id = req.get("id");
-        AttachmentDTO dto = attachmentService.getById(Long.parseLong(id));
+        AttachmentDTO dto = attachmentService.getByKId(Long.parseLong(id));
         attachmentService.removeById(Long.parseLong(id));
         if (dto != null) {
             Files.deleteIfExists(Paths.get(uploadDir).resolve(dto.getUrl()));

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kms.mapper.KnowledgeMapper">
+
+    <select id="selectPageByFilters" resultType="com.kms.entity.KnowledgeDO">
+        SELECT k.*
+        FROM knowledge k
+        <if test="p.relatedCategories != null and p.relatedCategories.size() > 0">
+            JOIN (
+            SELECT kid
+            FROM cok
+            WHERE name IN
+            <foreach collection="p.relatedCategories" item="n" open="(" separator="," close=")">
+                #{n}
+            </foreach>
+            GROUP BY kid
+            HAVING COUNT(DISTINCT name) = #{p.relatedCategories.size}
+            ) c ON c.kid = k.id
+        </if>
+        <where>
+            <if test="p.title != null and p.title != ''">
+                AND k.title LIKE CONCAT('%', #{p.title}, '%')
+            </if>
+            <if test="p.keywords != null and p.keywords != ''">
+                AND k.keywords LIKE CONCAT('%', #{p.keywords}, '%')
+            </if>
+            <if test="p.status != null">
+                AND k.status = #{p.status}
+            </if>
+            <if test="p.tagName != null and p.tagName != ''">
+                AND k.tag_name = #{p.tagName}
+            </if>
+            <if test="p.visibilityName != null and p.visibilityName != ''">
+                AND k.visibility_name = #{p.visibilityName}
+            </if>
+            <if test="p.questionNo != null">
+                AND k.question_no = #{p.questionNo}
+            </if>
+            <if test="p.startDate != null">
+                AND DATE(k.created_at) <![CDATA[ >= ]]> #{p.startDate}
+            </if>
+            <if test="p.endDate != null">
+                AND DATE(k.created_at) <![CDATA[ <= ]]> #{p.endDate}
+            </if>
+        </where>
+        ORDER BY k.created_at DESC
+    </select>
+
+</mapper>

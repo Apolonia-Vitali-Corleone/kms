@@ -1,15 +1,14 @@
 package com.kms.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.kms.dto.KnowledgeCreateReq;
-import com.kms.dto.KnowledgeUpdateReq;
-import com.kms.dto.PageReq;
-import com.kms.dto.PageResp;
+import com.kms.dto.*;
 import com.kms.service.AttachmentService;
 import com.kms.entity.KnowledgeDO;
 import com.kms.mapper.KnowledgeMapper;
 import com.kms.service.KnowledgeService;
+import com.kms.vo.KnowledgeDetailVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -69,11 +68,40 @@ public class KnowledgeServiceImpl implements KnowledgeService {
     }
 
     @Override
+    public IPage<KnowledgeDO> page(PageReq pageReq,
+                                   String title,
+                                   String keywords,
+                                   Integer status,
+                                   List<String> relatedCategories,
+                                   String tagName,
+                                   String visibilityName,
+                                   Integer questionNo,
+                                   LocalDate startDate,
+                                   LocalDate endDate) {
+
+        Page<KnowledgeDO> page = new Page<>(pageReq.getPage(), pageReq.getPageSize());
+
+        KnowledgeFilterParam p = new KnowledgeFilterParam();
+        p.setTitle(title);
+        p.setKeywords(keywords);
+        p.setStatus(status);
+        p.setRelatedCategories(relatedCategories);
+        p.setTagName(tagName);
+        p.setVisibilityName(visibilityName);
+        p.setQuestionNo(questionNo);
+        p.setStartDate(startDate);
+        p.setEndDate(endDate);
+
+        return knowledgeMapper.selectPageByFilters(page, p);
+    }
+
+    @Override
     public KnowledgeDO get(Long id) {
         KnowledgeDO entity = knowledgeMapper.selectById(id);
-        if (entity != null) {
-            entity.setAttachments(attachmentService.listByKnowledgeId(id));
-        }
+        AttachmentDTO attachments = attachmentService.getByKId(id);
+
+        KnowledgeDetailVO knowledgeDetailVO = new KnowledgeDetailVO();
+
         return entity;
     }
 

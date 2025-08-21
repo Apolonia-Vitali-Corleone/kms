@@ -1,23 +1,17 @@
-package com.kms.entity;
+package com.kms.vo;
 
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.kms.dto.AttachmentDTO;
+import com.kms.entity.AttachmentDO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.kms.dto.AttachmentDTO;
-
 @Data
-@TableName("knowledge")
-public class KnowledgeDO {
-    @TableId
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+public class KnowledgeDetailVO {
 
     private String title;
 
@@ -31,7 +25,6 @@ public class KnowledgeDO {
 
     private String summary;
 
-    @JsonSerialize(using = ToStringSerializer.class)
     private Integer questionNo;
 
     private String content;
@@ -42,4 +35,5 @@ public class KnowledgeDO {
 
     private LocalDateTime updatedAt;
 
+    private List<AttachmentDTO> attachments;
 }

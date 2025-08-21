@@ -62,4 +62,9 @@ public class CategoryServiceImpl implements CategoryService {
             categoryMapper.updateById(entity);
         }
     }
+
+    @Override
+    public List<CategoryDO> list() {
+        return categoryMapper.selectList(null);
+    }
 }

@@ -6,6 +6,7 @@
           <el-button type="primary" size="mini" @click="openCategoryDialog()">新建类目</el-button>
         </div>
 
+        <!--这下面是左侧的那棵树-->
         <el-tree
             ref="categoryTree"
             :data="categoryTree"
@@ -45,21 +46,18 @@
       <!--
       这是他妈的搜索框
       数据是他妈的queryForm
-
       -->
       <el-main class="kms-main">
         <div class="filter-bar" ref="filterBar">
 
           <el-form :inline="true" :model="queryForm" label-width="0">
 
+            <!-- 多选类目：绑定到数组 -->
             <el-form-item>
-              <el-select v-model="queryForm.categoryName" placeholder="关联类目" clearable multiple>
-                <el-option
-                    v-for="item in categoryDetail"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.name">
-                </el-option>
+              <el-select v-model="queryForm.categoryNames" placeholder="关联类目" multiple
+                         filterable
+                         class="full-tags">
+                <el-option v-for="item in relatedCategories" :key="item.id" :label="item.name" :value="item.name"/>
               </el-select>
             </el-form-item>
 
@@ -85,27 +83,14 @@
               </el-select>
             </el-form-item>
 
-            <!--            <el-form-item>-->
-            <!--              <el-input v-model="queryForm.keywords" placeholder="关键词"></el-input>-->
-            <!--            </el-form-item>-->
-
             <el-form-item>
-              <el-input v-model="queryForm.categoryName" placeholder="类目"></el-input>
+              <el-input v-model="queryForm.visibilityName" placeholder="可见度"></el-input>
             </el-form-item>
 
             <el-form-item>
               <el-input v-model.number="queryForm.questionNo" placeholder="问题序号"></el-input>
             </el-form-item>
 
-            <!--            <el-form-item>-->
-            <!--              <el-select v-model="queryForm.visibilityName" placeholder="可见性" clearable>-->
-            <!--                <el-option-->
-            <!--                    v-for="item in visibilityOptions"-->
-            <!--                    :key="item.id"-->
-            <!--                    :label="item.name"-->
-            <!--                    :value="item.name"></el-option>-->
-            <!--              </el-select>-->
-            <!--            </el-form-item>-->
 
             <el-form-item>
               <el-date-picker
@@ -323,9 +308,9 @@ import {
   deleteKnowledge as deleteKnowledgeApi,
   batchDeleteKnowledge
 } from '../api/knowledge'
-import {getCategory} from '../api/category'
-import {getAllTags} from '../api/tag'
-import {getAllVisibilities} from '../api/visibility'
+import {getCategory, getRelatedCategories} from '@/api/category'
+import {getAllTags} from '@/api/tag'
+import {getAllVisibilities} from '@/api/visibility'
 import {
   uploadAttachment as apiUploadAttachment,
   deleteAttachment as apiDeleteAttachment,
@@ -336,8 +321,11 @@ export default {
   name: 'KmsKnowledge',
   data() {
     return {
+      relatedCategories: [],
       tableHeight: 400, // 先声明为响应式，避免 warn
+
       categoryTree: [],
+
       flatCategories: [],
       currentCategoryId: null,
       categoryDialogVisible: false,
@@ -351,15 +339,19 @@ export default {
         remark: ''
       },
       showParentSelect: false,
+
       queryForm: {
+        title: '',
         keywords: '',
         status: undefined,
-        categoryName: '',
+        // categoryName: '',    // 删掉
+        categoryNames: [],      // ✅ 多选用数组
         tagName: '',
         visibilityName: '',
         questionNo: null,
         created: []
       },
+
       tagOptions: [],
       visibilityOptions: [],
       tableData: [],
@@ -392,10 +384,17 @@ export default {
     }
   },
 
+  computed: {
+    categoryNamesText() {
+      return (this.queryForm.categoryNames || []).join('、')
+    }
+  },
+
   created() {
     this.fetchCategoryTree()
     this.loadTags()
     this.loadVisibilities()
+    this.loadRelatedCategories();
   },
 
 // 保留：mounted 只做高度计算与事件绑定
@@ -411,6 +410,17 @@ export default {
   },
 
   methods: {
+
+    async loadRelatedCategories() {
+      try {
+        const data = await getRelatedCategories();
+        this.relatedCategories = data
+        console.log("from loadRelatedCategories")
+        console.log(data)
+      } catch (e) {
+        this.$message.error(e.message)
+      }
+    },
     computeHeight() {
       // 取表格真实顶部位置
       const tableEl = this.$refs.table && this.$refs.table.$el
@@ -430,9 +440,12 @@ export default {
       this.tableHeight = Math.max(h, 240)
     },
 
+    // 这是他妈的获取左侧的那棵树的
     async fetchCategoryTree() {
       try {
         const data = await http.get('/category/tree')
+        console.log("fetchCategoryTree")
+        console.log(data)
         this.categoryTree = data || []
         this.flatCategories = []
         const walk = (nodes) => {
@@ -447,12 +460,14 @@ export default {
           this.$nextTick(() => {
             this.$refs.categoryTree.setCurrentKey(this.currentCategoryId)
           })
-          this.fetchList()
+
+          await this.fetchList()
         }
       } catch (e) {
         this.$message.error(e.message)
       }
     },
+
     handleCategoryClick(data) {
       this.currentCategoryId = data.id
       this.pagination.page = 1
@@ -540,19 +555,23 @@ export default {
       const params = {
         page: this.pagination.page,
         page_size: this.pagination.page_size,
-        category_id: this.currentCategoryId,
+
+        //category_id: this.currentCategoryId,
+        relatedCategories: this.queryForm.categoryNames,
+        title: this.queryForm.title,
+        tag: this.queryForm.tag,
         status: this.queryForm.status,
-        keywords: this.queryForm.keywords,
-        categoryName: this.queryForm.categoryName,
-        tagName: this.queryForm.tagName,
         visibilityName: this.queryForm.visibilityName,
         questionNo: this.queryForm.questionNo,
+
+        // 日期
         startDate: this.queryForm.created && this.queryForm.created[0],
         endDate: this.queryForm.created && this.queryForm.created[1]
       }
       try {
         const data = await getKnowledgeList(params)
         this.tableData = data.records
+        console.log("fetchList")
         console.log(this.tableData)
         this.pagination.total = data.total
       } catch (e) {
@@ -763,11 +782,30 @@ export default {
         this.$message.error(e.message)
       })
     }
-  }
+  },
 }
 </script>
 
 <style scoped>
+
+/* 让选择框高度自适应、标签可换行并留点间距 */
+.full-tags .el-input__inner {
+  height: auto !important;
+  min-height: 40px; /* 基础高度 */
+  line-height: normal;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.full-tags .el-select__tags {
+  max-width: 100%;
+  white-space: normal; /* 允许换行 */
+}
+
+.full-tags .el-select__tags .el-tag {
+  margin: 4px 6px 0 0; /* 标签间距更美观 */
+}
+
 .kms-knowledge {
   height: 100%;
 }

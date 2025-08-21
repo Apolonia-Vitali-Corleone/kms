@@ -14,13 +14,21 @@ public class CategoryDO {
     @TableId
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
+
     private String name;
+
     @JsonSerialize(using = ToStringSerializer.class)
     private Long parentId;
+
     private Integer recommend;
+
     private Integer status;
+
     private String remark;
+
     private String createdBy;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 }

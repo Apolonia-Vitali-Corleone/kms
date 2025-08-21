@@ -1,10 +1,10 @@
 package com.kms.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.kms.common.R;
-import com.kms.dto.IdsReq;
-import com.kms.dto.KnowledgeCreateReq;
-import com.kms.dto.KnowledgeUpdateReq;
-import com.kms.dto.PageReq;
+import com.kms.dto.*;
+import com.kms.entity.KnowledgeDO;
 import com.kms.service.KnowledgeService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
@@ -28,14 +28,16 @@ public class KnowledgeController {
                      @RequestParam(required = false) String title,
                      @RequestParam(required = false) String keywords,
                      @RequestParam(required = false) Integer status,
-                     @RequestParam(required = false) String categoryName,
+                     @RequestParam(required = false, name = "relatedCategories") List<String> relatedCategories,
                      @RequestParam(required = false) String tagName,
                      @RequestParam(required = false) String visibilityName,
                      @RequestParam(required = false) Integer questionNo,
                      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
                      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+
+        System.out.println(title);
         return R.ok(knowledgeService.page(pageReq, title, keywords, status,
-                categoryName, tagName, visibilityName, questionNo, startDate, endDate));
+                relatedCategories, tagName, visibilityName, questionNo, startDate, endDate));
     }
 
     @GetMapping("/{id}")

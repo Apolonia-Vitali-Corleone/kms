@@ -9,6 +9,6 @@ public interface AttachmentService {
     List<AttachmentDTO> listByKnowledgeId(Long knowledgeId);
     void removeByKnowledgeId(Long knowledgeId);
     void removeById(Long id);
-    AttachmentDTO getById(Long id);
+    AttachmentDTO getByKId(Long id);
 }
 

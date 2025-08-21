@@ -27,7 +27,7 @@ public class CategoryController {
     }
 
     @GetMapping
-    public R<List<Locale.Category>> list() {
+    public R<List<CategoryDO>> list() {
         return R.ok(categoryService.list());
     }
 

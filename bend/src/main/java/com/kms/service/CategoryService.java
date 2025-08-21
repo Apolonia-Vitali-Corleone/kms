@@ -11,4 +11,5 @@ public interface CategoryService {
     void update(CategoryDO category);
     void delete(Long id);
     void updateStatus(Long id, Integer status);
+    List<CategoryDO> list();
 }

@@ -1,6 +1,7 @@
 package com.kms.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.kms.dto.AttachmentDTO;
 import com.kms.entity.AttachmentDO;
 import com.kms.mapper.AttachmentMapper;
@@ -66,7 +67,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public AttachmentDTO getById(Long id) {
+    public AttachmentDTO getByKId(Long id) {
         AttachmentDO entity = attachmentMapper.selectById(id);
         if (entity == null) {
             return null;
@@ -76,6 +77,14 @@ public class AttachmentServiceImpl implements AttachmentService {
         dto.setUrl(entity.getFilePath());
         dto.setFileName(entity.getFilePath());
         return dto;
+
+//        List<AttachmentDO> list = attachmentMapper.selectList(
+//                Wrappers.<AttachmentDO>lambdaQuery()
+//                        .eq(AttachmentDO::getKid, kid)     // kid 字段等于
+//                // .eq(AttachmentDO::getStatus, 1) // 可叠加其它条件
+//                // .orderByDesc(AttachmentDO::getId)
+//        );
+//        return list;
     }
 }
 
