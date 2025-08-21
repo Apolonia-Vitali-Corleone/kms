@@ -474,7 +474,14 @@ export default {
     openKnowledgeDialog(row) {
       if (row && row.id) {
         this.knowledgeDialogTitle = '编辑知识'
-        this.knowledgeForm = Object.assign({}, row, {attachments: row.attachments || []})
+        this.knowledgeForm = Object.assign({}, row, {
+          attachments: (row.attachments || []).map(item => ({
+            id: item.id || item.file_id,
+            name: item.name || item.file_name,
+            url: item.url,
+            size: item.size
+          }))
+        })
       } else {
         this.knowledgeDialogTitle = '新增知识'
         this.knowledgeForm = {
@@ -610,10 +617,10 @@ export default {
     uploadAttachment(request) {
       apiUploadAttachment(request.file).then(data => {
         this.knowledgeForm.attachments.push({
-          file_id: data.id,
-          file_name: data.fileName,
-          size: data.size,
-          url: data.url
+          id: data.id,
+          name: data.fileName,
+          url: data.url,
+          size: data.size
         })
         request.onSuccess()
       }).catch(err => {
@@ -623,19 +630,19 @@ export default {
     },
 
     downloadAttachment(file) {
-      apiDownloadAttachment(file.file_id).then(res => {
+      apiDownloadAttachment(file.id).then(res => {
         const blob = new Blob([res.data])
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = file.file_name
+        a.download = file.name
         a.click()
         window.URL.revokeObjectURL(url)
       })
     },
 
     removeAttachment(file, fileList) {
-      apiDeleteAttachment(file.file_id).then(() => {
+      apiDeleteAttachment(file.id).then(() => {
         this.$message.success('删除成功')
         this.knowledgeForm.attachments = fileList
       }).catch(e => {
