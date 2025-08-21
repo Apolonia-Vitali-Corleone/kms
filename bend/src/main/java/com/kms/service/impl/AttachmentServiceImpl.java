@@ -26,6 +26,14 @@ public class AttachmentServiceImpl implements AttachmentService {
             return;
         }
         for (AttachmentDTO dto : attachments) {
+            if (dto.getId() != null) {
+                AttachmentDO entity = attachmentMapper.selectById(dto.getId());
+                if (entity != null) {
+                    entity.setKnowledgeId(knowledgeId);
+                    attachmentMapper.updateById(entity);
+                    continue;
+                }
+            }
             AttachmentDO entity = new AttachmentDO();
             entity.setKnowledgeId(knowledgeId);
             entity.setFilePath(dto.getUrl());
@@ -55,6 +63,19 @@ public class AttachmentServiceImpl implements AttachmentService {
     @Override
     public void removeById(Long id) {
         attachmentMapper.deleteById(id);
+    }
+
+    @Override
+    public AttachmentDTO getById(Long id) {
+        AttachmentDO entity = attachmentMapper.selectById(id);
+        if (entity == null) {
+            return null;
+        }
+        AttachmentDTO dto = new AttachmentDTO();
+        BeanUtils.copyProperties(entity, dto);
+        dto.setUrl(entity.getFilePath());
+        dto.setFileName(entity.getFilePath());
+        return dto;
     }
 }
 
