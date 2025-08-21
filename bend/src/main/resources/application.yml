@@ -31,4 +31,4 @@ logging:
     com.zaxxer.hikari: info
 
 upload:
-  dir: /uploads
+  dir: "D:/GithubRepositories/upload"
