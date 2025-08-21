@@ -1,8 +1,9 @@
 import http from './http'
 
-export function uploadAttachment(file) {
+export function uploadAttachment(file, knowledgeId) {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('knowledgeId', knowledgeId)
   return http.post('/attachment/upload', formData, {
     // headers: {'Content-Type': 'multipart/form-data'}
   })
