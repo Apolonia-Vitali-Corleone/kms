@@ -189,21 +189,36 @@
     <!-- Knowledge Dialog -->
     <el-dialog :title="knowledgeDialogTitle" :visible.sync="knowledgeDialogVisible" width="800px">
       <el-form :model="knowledgeForm" ref="knowledgeForm" label-width="100px">
-        <el-form-item label="分类" prop="category_id"
+        <el-form-item label="分类" prop="categoryName"
                       :rules="[{ required: true, message: '请选择分类', trigger: 'change' }]">
-          <el-select v-model="knowledgeForm.category_id" placeholder="请选择">
+          <el-select v-model="knowledgeForm.categoryName" placeholder="请选择">
             <el-option
                 v-for="item in flatCategories"
                 :key="item.id"
                 :label="item.name"
-                :value="item.id"></el-option>
+                :value="item.name"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="标题" prop="title" :rules="[{ required: true, message: '请输入标题', trigger: 'blur' }]">
           <el-input v-model="knowledgeForm.title"></el-input>
         </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model="knowledgeForm.tags" placeholder="逗号分隔"></el-input>
+        <el-form-item label="标签" prop="tagName" :rules="[{ required: true, message: '请选择标签', trigger: 'change' }]">
+          <el-select v-model="knowledgeForm.tagName" placeholder="请选择">
+            <el-option
+                v-for="item in tagOptions"
+                :key="item.id"
+                :label="item.name"
+                :value="item.name"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="可见性" prop="visibilityName" :rules="[{ required: true, message: '请选择可见性', trigger: 'change' }]">
+          <el-select v-model="knowledgeForm.visibilityName" placeholder="请选择">
+            <el-option
+                v-for="item in visibilityOptions"
+                :key="item.id"
+                :label="item.name"
+                :value="item.name"></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="关键词">
           <el-input v-model="knowledgeForm.keywords" placeholder="逗号分隔"></el-input>
@@ -214,14 +229,8 @@
             <el-option label="停用" :value="0"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="knowledgeForm.knowledge_type">
-            <el-option label="问答" value="Q"></el-option>
-            <el-option label="文档" value="D"></el-option>
-          </el-select>
-        </el-form-item>
         <el-form-item label="问题序号">
-          <el-input-number v-model="knowledgeForm.question_no" :min="1"></el-input-number>
+          <el-input-number v-model="knowledgeForm.questionNo" :min="1"></el-input-number>
         </el-form-item>
         <el-form-item label="摘要">
           <el-input type="textarea" v-model="knowledgeForm.summary"></el-input>
@@ -321,13 +330,13 @@ export default {
       knowledgeDialogTitle: '',
       knowledgeForm: {
         id: null,
-        category_id: null,
+        categoryName: '',
         title: '',
-        tags: '',
+        tagName: '',
+        visibilityName: '',
         keywords: '',
         status: 1,
-        knowledge_type: 'Q',
-        question_no: 1,
+        questionNo: 1,
         summary: '',
         content: '',
         attachments: []
@@ -474,18 +483,24 @@ export default {
     openKnowledgeDialog(row) {
       if (row && row.id) {
         this.knowledgeDialogTitle = '编辑知识'
-        this.knowledgeForm = Object.assign({}, row, {attachments: row.attachments || []})
+        this.knowledgeForm = Object.assign({}, row, {
+          attachments: (row.attachments || []).map(a => ({
+            ...a,
+            name: a.fileName
+          }))
+        })
       } else {
         this.knowledgeDialogTitle = '新增知识'
+        const current = this.flatCategories.find(c => c.id === this.currentCategoryId)
         this.knowledgeForm = {
           id: null,
-          category_id: this.currentCategoryId,
+          categoryName: current ? current.name : '',
           title: '',
-          tags: '',
+          tagName: '',
+          visibilityName: '',
           keywords: '',
           status: 1,
-          knowledge_type: 'Q',
-          question_no: this.tableData.length + 1,
+          questionNo: this.tableData.length + 1,
           summary: '',
           content: '',
           attachments: []
@@ -520,10 +535,18 @@ export default {
       this.$refs.knowledgeForm.validate(async valid => {
         if (!valid) return
         try {
+          const payload = {
+            ...this.knowledgeForm,
+            attachments: (this.knowledgeForm.attachments || []).map(a => ({
+              id: a.id,
+              fileName: a.fileName || a.name,
+              url: a.url
+            }))
+          }
           if (this.knowledgeForm.id) {
-            await updateKnowledge(this.knowledgeForm.id, this.knowledgeForm)
+            await updateKnowledge(this.knowledgeForm.id, payload)
           } else {
-            await createKnowledge(this.knowledgeForm)
+            await createKnowledge(payload)
           }
           this.$message.success('操作成功')
           this.knowledgeDialogVisible = false
@@ -610,10 +633,10 @@ export default {
     uploadAttachment(request) {
       apiUploadAttachment(request.file).then(data => {
         this.knowledgeForm.attachments.push({
-          file_id: data.id,
-          file_name: data.fileName,
-          size: data.size,
-          url: data.url
+          id: data.id,
+          fileName: data.fileName,
+          url: data.url,
+          name: data.fileName
         })
         request.onSuccess()
       }).catch(err => {
@@ -623,21 +646,26 @@ export default {
     },
 
     downloadAttachment(file) {
-      apiDownloadAttachment(file.file_id).then(res => {
+      apiDownloadAttachment(file.id).then(res => {
         const blob = new Blob([res.data])
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = file.file_name
+        a.download = file.fileName || file.name
         a.click()
         window.URL.revokeObjectURL(url)
       })
     },
 
     removeAttachment(file, fileList) {
-      apiDeleteAttachment(file.file_id).then(() => {
+      apiDeleteAttachment(file.id).then(() => {
         this.$message.success('删除成功')
-        this.knowledgeForm.attachments = fileList
+        this.knowledgeForm.attachments = fileList.map(f => ({
+          id: f.id,
+          fileName: f.fileName || f.name,
+          url: f.url,
+          name: f.name
+        }))
       }).catch(e => {
         this.$message.error(e.message)
       })
