@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.kms.dto.AttachmentDTO;
 import com.kms.dto.KnowledgeCreateReq;
+import com.kms.dto.KnowledgeUpdateReq;
 import com.kms.dto.PageReq;
 import com.kms.entity.KnowledgeDO;
 import com.kms.mapper.KnowledgeMapper;
@@ -81,6 +82,21 @@ public class KnowledgeServiceImplTest {
         KnowledgeServiceImpl service = new KnowledgeServiceImpl(mapper, attachmentService);
         service.remove(1L);
         Mockito.verify(attachmentService).removeByKnowledgeId(1L);
+    }
+
+    @Test
+    void updateRefreshesAttachments() {
+        KnowledgeMapper mapper = Mockito.mock(KnowledgeMapper.class);
+        AttachmentService attachmentService = Mockito.mock(AttachmentService.class);
+        KnowledgeDO existing = new KnowledgeDO();
+        Mockito.when(mapper.selectById(1L)).thenReturn(existing);
+        KnowledgeServiceImpl service = new KnowledgeServiceImpl(mapper, attachmentService);
+        KnowledgeUpdateReq req = new KnowledgeUpdateReq();
+        req.setAttachments(java.util.Collections.singletonList(new AttachmentDTO()));
+        service.update(1L, req);
+        Mockito.verify(attachmentService).removeByKnowledgeId(1L);
+        Mockito.verify(attachmentService).saveBatch(1L, req.getAttachments());
+        Mockito.verify(mapper).updateById(Mockito.any(KnowledgeDO.class));
     }
 }
 

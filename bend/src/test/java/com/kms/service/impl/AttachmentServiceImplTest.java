@@ -1,61 +1,82 @@
 package com.kms.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.kms.dto.AttachmentDTO;
 import com.kms.entity.AttachmentDO;
 import com.kms.mapper.AttachmentMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
-public class AttachmentServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class AttachmentServiceImplTest {
+
+    @Mock
+    private AttachmentMapper attachmentMapper;
+
+    private AttachmentServiceImpl attachmentService;
+
+    @BeforeEach
+    void setUp() {
+        attachmentService = new AttachmentServiceImpl(attachmentMapper);
+    }
 
     @Test
-    void saveBatchInsertsAttachments() {
-        AttachmentMapper mapper = Mockito.mock(AttachmentMapper.class);
-        AttachmentServiceImpl service = new AttachmentServiceImpl(mapper);
+    void saveBatch_insertsAttachmentsAndSetsId() {
         AttachmentDTO dto = new AttachmentDTO();
-        dto.setUrl("a.txt");
-        service.saveBatch(1L, Collections.singletonList(dto));
+        dto.setUrl("file1.txt");
+        when(attachmentMapper.insert(any())).thenAnswer(invocation -> {
+            AttachmentDO entity = invocation.getArgument(0);
+            entity.setId(1L);
+            return 1;
+        });
+
+        attachmentService.saveBatch(10L, Arrays.asList(dto));
+
         ArgumentCaptor<AttachmentDO> captor = ArgumentCaptor.forClass(AttachmentDO.class);
-        Mockito.verify(mapper).insert(captor.capture());
-        assertEquals(1L, captor.getValue().getKnowledgeId());
+        verify(attachmentMapper).insert(captor.capture());
+        AttachmentDO saved = captor.getValue();
+        assertEquals(10L, saved.getKnowledgeId());
+        assertEquals("file1.txt", saved.getFilePath());
+        assertEquals(1L, dto.getId());
     }
 
     @Test
-    void listByKnowledgeIdReturnsDtos() {
-        AttachmentMapper mapper = Mockito.mock(AttachmentMapper.class);
-        AttachmentDO ado = new AttachmentDO();
-        ado.setId(1L);
-        ado.setKnowledgeId(1L);
-        ado.setFilePath("a.txt");
-        Mockito.when(mapper.selectList(Mockito.any(QueryWrapper.class)))
-                .thenReturn(Collections.singletonList(ado));
-        AttachmentServiceImpl service = new AttachmentServiceImpl(mapper);
-        List<AttachmentDTO> result = service.listByKnowledgeId(1L);
-        assertEquals(1, result.size());
-        assertEquals("a.txt", result.get(0).getUrl());
+    void listByKnowledgeId_returnsDtoList() {
+        AttachmentDO entity = new AttachmentDO();
+        entity.setId(5L);
+        entity.setKnowledgeId(20L);
+        entity.setFilePath("f.txt");
+        when(attachmentMapper.selectList(any())).thenReturn(Collections.singletonList(entity));
+
+        List<AttachmentDTO> list = attachmentService.listByKnowledgeId(20L);
+        assertEquals(1, list.size());
+        AttachmentDTO dto = list.get(0);
+        assertEquals(5L, dto.getId());
+        assertEquals("f.txt", dto.getUrl());
+        verify(attachmentMapper).selectList(any());
     }
 
     @Test
-    void removeByKnowledgeIdDeletes() {
-        AttachmentMapper mapper = Mockito.mock(AttachmentMapper.class);
-        AttachmentServiceImpl service = new AttachmentServiceImpl(mapper);
-        service.removeByKnowledgeId(1L);
-        Mockito.verify(mapper).delete(Mockito.any(QueryWrapper.class));
+    void removeByKnowledgeId_deletesMatchingRecords() {
+        attachmentService.removeByKnowledgeId(3L);
+        verify(attachmentMapper).delete(any());
     }
 
     @Test
-    void removeByIdDeletes() {
-        AttachmentMapper mapper = Mockito.mock(AttachmentMapper.class);
-        AttachmentServiceImpl service = new AttachmentServiceImpl(mapper);
-        service.removeById(1L);
-        Mockito.verify(mapper).deleteById(1L);
+    void removeById_deletesByPrimaryKey() {
+        attachmentService.removeById(2L);
+        verify(attachmentMapper).deleteById(2L);
     }
 }
 
