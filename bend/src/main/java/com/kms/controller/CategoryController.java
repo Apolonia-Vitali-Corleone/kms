@@ -9,6 +9,7 @@ import com.kms.service.CategoryService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/category")
@@ -23,6 +24,11 @@ public class CategoryController {
     @GetMapping("/tree")
     public R<List<CategoryTreeNode>> tree() {
         return R.ok(categoryService.tree());
+    }
+
+    @GetMapping
+    public R<List<Locale.Category>> list() {
+        return R.ok(categoryService.list());
     }
 
     @PostMapping("/create")

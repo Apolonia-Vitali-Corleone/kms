@@ -5,6 +5,7 @@
         <div class="tree-toolbar">
           <el-button type="primary" size="mini" @click="openCategoryDialog()">新建类目</el-button>
         </div>
+
         <el-tree
             ref="categoryTree"
             :data="categoryTree"
@@ -41,43 +42,71 @@
         </el-tree>
       </el-aside>
 
+      <!--
+      这是他妈的搜索框
+      数据是他妈的queryForm
+
+      -->
       <el-main class="kms-main">
         <div class="filter-bar" ref="filterBar">
 
           <el-form :inline="true" :model="queryForm" label-width="0">
+
             <el-form-item>
-              <el-input v-model="queryForm.keywords" placeholder="关键词"></el-input>
-            </el-form-item>
-            <el-form-item>
-              <el-select v-model="queryForm.status" placeholder="状态" clearable>
-                <el-option label="启用" :value="1"></el-option>
-                <el-option label="停用" :value="0"></el-option>
+              <el-select v-model="queryForm.categoryName" placeholder="关联类目" clearable multiple>
+                <el-option
+                    v-for="item in categoryDetail"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.name">
+                </el-option>
               </el-select>
             </el-form-item>
+
             <el-form-item>
-              <el-input v-model="queryForm.categoryName" placeholder="分类名称"></el-input>
+              <el-input v-model="queryForm.title" placeholder="标题"></el-input>
             </el-form-item>
+
             <el-form-item>
               <el-select v-model="queryForm.tagName" placeholder="标签" clearable>
                 <el-option
                     v-for="item in tagOptions"
                     :key="item.id"
                     :label="item.name"
-                    :value="item.name"></el-option>
+                    :value="item.name">
+                </el-option>
               </el-select>
             </el-form-item>
+
             <el-form-item>
-              <el-select v-model="queryForm.visibilityName" placeholder="可见性" clearable>
-                <el-option
-                    v-for="item in visibilityOptions"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.name"></el-option>
+              <el-select v-model="queryForm.status" placeholder="状态" clearable>
+                <el-option label="启用" :value="1"></el-option>
+                <el-option label="停用" :value="0"></el-option>
               </el-select>
             </el-form-item>
+
+            <!--            <el-form-item>-->
+            <!--              <el-input v-model="queryForm.keywords" placeholder="关键词"></el-input>-->
+            <!--            </el-form-item>-->
+
+            <el-form-item>
+              <el-input v-model="queryForm.categoryName" placeholder="类目"></el-input>
+            </el-form-item>
+
             <el-form-item>
               <el-input v-model.number="queryForm.questionNo" placeholder="问题序号"></el-input>
             </el-form-item>
+
+            <!--            <el-form-item>-->
+            <!--              <el-select v-model="queryForm.visibilityName" placeholder="可见性" clearable>-->
+            <!--                <el-option-->
+            <!--                    v-for="item in visibilityOptions"-->
+            <!--                    :key="item.id"-->
+            <!--                    :label="item.name"-->
+            <!--                    :value="item.name"></el-option>-->
+            <!--              </el-select>-->
+            <!--            </el-form-item>-->
+
             <el-form-item>
               <el-date-picker
                   v-model="queryForm.created"
@@ -88,6 +117,7 @@
                   value-format="yyyy-MM-dd">
               </el-date-picker>
             </el-form-item>
+
             <el-form-item>
               <el-button type="primary" icon="el-icon-search" @click="fetchList">搜索</el-button>
               <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
@@ -119,6 +149,7 @@
           </el-table-column>
           <el-table-column prop="keywords" label="关键词"></el-table-column>
           <el-table-column prop="categoryName" label="知识分类"></el-table-column>
+          <el-table-column prop="visibilityName" label="可见度"></el-table-column>
           <el-table-column prop="questionNo" label="问题序号" width="100"></el-table-column>
           <el-table-column prop="createdBy" label="创建人" width="120"></el-table-column>
           <el-table-column prop="createdAt" label="创建时间" width="160"></el-table-column>
@@ -131,7 +162,7 @@
           </el-table-column>
         </el-table>
 
-        <div class="pager">
+        <div class="pager" ref="pager">
           <el-pagination
               background
               layout="total, sizes, prev, pager, next, jumper"
@@ -201,7 +232,8 @@
         <el-form-item label="标题" prop="title" :rules="[{ required: true, message: '请输入标题', trigger: 'blur' }]">
           <el-input v-model="knowledgeForm.title"></el-input>
         </el-form-item>
-        <el-form-item label="标签" prop="tagName" :rules="[{ required: true, message: '请选择标签', trigger: 'change' }]">
+        <el-form-item label="标签" prop="tagName"
+                      :rules="[{ required: true, message: '请选择标签', trigger: 'change' }]">
           <el-select v-model="knowledgeForm.tagName" placeholder="请选择">
             <el-option
                 v-for="item in tagOptions"
@@ -210,7 +242,8 @@
                 :value="item.name"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="可见性" prop="visibilityName" :rules="[{ required: true, message: '请选择可见性', trigger: 'change' }]">
+        <el-form-item label="可见性" prop="visibilityName"
+                      :rules="[{ required: true, message: '请选择可见性', trigger: 'change' }]">
           <el-select v-model="knowledgeForm.visibilityName" placeholder="请选择">
             <el-option
                 v-for="item in visibilityOptions"
@@ -267,7 +300,14 @@
 
     <!-- Knowledge Detail Dialog -->
     <el-dialog title="知识详情" :visible.sync="knowledgeDetailDialogVisible" width="60%">
-      <h3>{{ knowledgeDetail.title }}</h3>
+      <h3>知识标题： {{ knowledgeDetail.title }}</h3>
+      <h3>知识标签： {{ knowledgeDetail.tagName }}</h3>
+      <h3>知识状态： {{ knowledgeDetail.status }}</h3>
+      <h3>关键词： {{ knowledgeDetail.keywords }}</h3>
+      <h3>知识分类： {{ knowledgeDetail.categoryName }}</h3>
+      <h3>问题序号： {{ knowledgeDetail.questionNo }}</h3>
+      <h3>创建人： {{ knowledgeDetail.createdBy }}</h3>
+      <h3>创建时间： {{ knowledgeDetail.createdAt }}</h3>
       <div v-html="knowledgeDetail.content"></div>
     </el-dialog>
   </div>
@@ -296,6 +336,7 @@ export default {
   name: 'KmsKnowledge',
   data() {
     return {
+      tableHeight: 400, // 先声明为响应式，避免 warn
       categoryTree: [],
       flatCategories: [],
       currentCategoryId: null,
@@ -350,12 +391,45 @@ export default {
       knowledgeDetail: {}
     }
   },
-  mounted() {
+
+  created() {
     this.fetchCategoryTree()
     this.loadTags()
     this.loadVisibilities()
   },
+
+// 保留：mounted 只做高度计算与事件绑定
+  mounted() {
+    this.$nextTick(() => {
+      this.computeHeight()
+      window.addEventListener('resize', this.computeHeight)
+    })
+  },
+
+  beforeDestroy() {
+    window.removeEventListener('resize', this.computeHeight)
+  },
+
   methods: {
+    computeHeight() {
+      // 取表格真实顶部位置
+      const tableEl = this.$refs.table && this.$refs.table.$el
+      if (!tableEl) return
+      const top = tableEl.getBoundingClientRect().top
+
+      // 分页区高度（没有则为 0）
+      const pagerH = this.$refs.pager ? this.$refs.pager.offsetHeight : 0
+
+      // 底部留空隙，避免紧贴底边
+      const gap = 12
+
+      // 直接用视口高度计算可用空间
+      const h = window.innerHeight - top - pagerH - gap
+
+      // 最小高度兜底，避免极端情况下过小
+      this.tableHeight = Math.max(h, 240)
+    },
+
     async fetchCategoryTree() {
       try {
         const data = await http.get('/category/tree')
@@ -459,6 +533,9 @@ export default {
       this.multipleSelection = val
     },
 
+    /*
+    这它妈就是搜索的那个按钮
+     */
     async fetchList() {
       const params = {
         page: this.pagination.page,
@@ -488,6 +565,7 @@ export default {
         this.knowledgeDialogTitle = '编辑知识'
         try {
           const data = await getKnowledge(row.id)
+
           this.knowledgeForm = Object.assign({}, data, {
             attachments: (data.attachments || []).map(a => ({
               id: a.id,
@@ -524,6 +602,8 @@ export default {
     async viewKnowledge(row) {
       try {
         this.knowledgeDetail = await getKnowledge(row.id)
+        console.log("你在查看什么？")
+        console.log(this.knowledgeDetail)
         this.knowledgeDetailDialogVisible = true
       } catch (e) {
         this.$message.error(e.message)
@@ -726,6 +806,36 @@ export default {
   height: 100%;
   padding: 10px;
   box-sizing: border-box;
+}
+
+.filter-bar {
+  padding-bottom: 10px;
+}
+
+.pager {
+  padding: 10px 0;
+  text-align: right;
+}
+
+.kms-knowledge {
+  /* 关键：让整个布局以视口为基准 */
+  height: 100vh;
+}
+
+.kms-tree {
+  border-right: 1px solid #ebeef5;
+  overflow-y: auto;
+}
+
+/* 主区用列布局并允许子项伸展 */
+.kms-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  /* 关键：允许内部子项在 flex 容器中正确计算高度 */
+  min-height: 0;
 }
 
 .filter-bar {

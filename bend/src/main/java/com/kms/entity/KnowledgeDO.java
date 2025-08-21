@@ -18,13 +18,13 @@ public class KnowledgeDO {
     @TableId
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
-    private String categoryName;
     private String title;
     private String tagName;
     private String visibilityName;
     private String keywords;
     private Integer status;
     private String summary;
+    @JsonSerialize(using = ToStringSerializer.class)
     private Integer questionNo;
     private String content;
     @TableField(exist = false)
