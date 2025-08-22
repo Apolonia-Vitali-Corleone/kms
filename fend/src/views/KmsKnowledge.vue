@@ -37,92 +37,24 @@
       </el-main>
     </el-container>
 
-      <!-- Knowledge Dialog -->
-      <el-dialog :title="knowledgeDialogTitle" :visible.sync="knowledgeDialogVisible" width="800px">
-      <el-form :model="knowledgeForm" ref="knowledgeForm" label-width="100px">
-        <el-form-item label="分类" prop="categoryName"
-                      :rules="[{ required: true, message: '请选择分类', trigger: 'change' }]">
-          <el-select v-model="knowledgeForm.categoryName" placeholder="请选择">
-            <el-option
-                v-for="item in flatCategories"
-                :key="item.id"
-                :label="item.name"
-                :value="item.name"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标题" prop="title" :rules="[{ required: true, message: '请输入标题', trigger: 'blur' }]">
-          <el-input v-model="knowledgeForm.title"></el-input>
-        </el-form-item>
-        <el-form-item label="标签" prop="tagName"
-                      :rules="[{ required: true, message: '请选择标签', trigger: 'change' }]">
-          <el-select v-model="knowledgeForm.tagName" placeholder="请选择">
-            <el-option
-                v-for="item in tagOptions"
-                :key="item.id"
-                :label="item.name"
-                :value="item.name"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="可见性" prop="visibilityName"
-                      :rules="[{ required: true, message: '请选择可见性', trigger: 'change' }]">
-          <el-select v-model="knowledgeForm.visibilityName" placeholder="请选择">
-            <el-option
-                v-for="item in visibilityOptions"
-                :key="item.id"
-                :label="item.name"
-                :value="item.name"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="关键词">
-          <el-input v-model="knowledgeForm.keywords" placeholder="逗号分隔"></el-input>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="knowledgeForm.status">
-            <el-option label="启用" :value="1"></el-option>
-            <el-option label="停用" :value="0"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="问题序号">
-          <el-input-number v-model="knowledgeForm.questionNo" :min="1"></el-input-number>
-        </el-form-item>
-        <el-form-item label="创建人">
-          <el-input v-model="knowledgeForm.createdBy"></el-input>
-        </el-form-item>
-        <el-form-item label="摘要">
-          <el-input type="textarea" v-model="knowledgeForm.summary"></el-input>
-        </el-form-item>
-        <el-form-item label="内容">
-          <el-input type="textarea" :rows="5" v-model="knowledgeForm.content"></el-input>
-        </el-form-item>
-        <el-form-item label="附件">
-          <el-upload
-              action=""
-              :file-list="knowledgeForm.attachments"
-              :http-request="uploadAttachment"
-              :on-remove="removeAttachment"
-              :on-preview="downloadAttachment">
-            <el-button type="primary" size="small">上传</el-button>
-          </el-upload>
-        </el-form-item>
-      </el-form>
-      <div slot="footer">
-        <el-button @click="knowledgeDialogVisible=false">取消</el-button>
-        <el-button type="primary" @click="submitKnowledge">确定</el-button>
-      </div>
-    </el-dialog>
-
-      <!-- Knowledge Detail Dialog -->
-      <el-dialog title="知识详情" :visible.sync="knowledgeDetailDialogVisible" width="60%">
-      <h3>知识标题： {{ knowledgeDetail.title }}</h3>
-      <h3>知识标签： {{ knowledgeDetail.tagName }}</h3>
-      <h3>知识状态： {{ knowledgeDetail.status }}</h3>
-      <h3>关键词： {{ knowledgeDetail.keywords }}</h3>
-      <h3>知识分类： {{ knowledgeDetail.categoryName }}</h3>
-      <h3>问题序号： {{ knowledgeDetail.questionNo }}</h3>
-      <h3>创建人： {{ knowledgeDetail.createdBy }}</h3>
-      <h3>创建时间： {{ knowledgeDetail.createdAt }}</h3>
-      <div v-html="knowledgeDetail.content"></div>
-    </el-dialog>
+    <KnowledgeDialog
+      :visible="knowledgeDialogVisible"
+      :title="knowledgeDialogTitle"
+      :formData="knowledgeForm"
+      :flat-categories="flatCategories"
+      :tag-options="tagOptions"
+      :visibility-options="visibilityOptions"
+      :upload-attachment="uploadAttachment"
+      :remove-attachment="removeAttachment"
+      :download-attachment="downloadAttachment"
+      @submit="submitKnowledge"
+      @close="knowledgeDialogVisible = false"
+    />
+    <KnowledgeDetailDialog
+      :visible="knowledgeDetailDialogVisible"
+      :detail-data="knowledgeDetail"
+      @close="knowledgeDetailDialogVisible = false"
+    />
   </div>
 </template>
 
@@ -146,10 +78,12 @@ import {
 import CategoryTree from '../components/CategoryTree.vue'
 import KnowledgeFilter from '../components/KnowledgeFilter.vue'
 import KnowledgeTable from '../components/KnowledgeTable.vue'
+import KnowledgeDialog from '../components/KnowledgeDialog.vue'
+import KnowledgeDetailDialog from '../components/KnowledgeDetailDialog.vue'
 
 export default {
   name: 'KmsKnowledge',
-  components: { CategoryTree, KnowledgeFilter, KnowledgeTable },
+  components: { CategoryTree, KnowledgeFilter, KnowledgeTable, KnowledgeDialog, KnowledgeDetailDialog },
   data() {
     return {
       id2name: {},
@@ -317,30 +251,27 @@ export default {
     },
 
 
-    async submitKnowledge() {
-      this.$refs.knowledgeForm.validate(async valid => {
-        if (!valid) return
-        try {
-          const payload = {
-            ...this.knowledgeForm,
-            attachments: (this.knowledgeForm.attachments || []).map(a => ({
-              id: a.id,
-              fileName: a.name || a.fileName,
-              url: a.url
-            }))
-          }
-          if (this.knowledgeForm.id) {
-            await updateKnowledge(this.knowledgeForm.id, payload)
-          } else {
-            await createKnowledge(payload)
-          }
-          this.$message.success('操作成功')
-          this.knowledgeDialogVisible = false
-          this.$refs.knowledgeTable.loadKnowledgeList()
-        } catch (e) {
-          this.$message.error(e.message)
+    async submitKnowledge(form) {
+      try {
+        const payload = {
+          ...form,
+          attachments: (form.attachments || []).map(a => ({
+            id: a.id,
+            fileName: a.name || a.fileName,
+            url: a.url
+          }))
         }
-      })
+        if (form.id) {
+          await updateKnowledge(form.id, payload)
+        } else {
+          await createKnowledge(payload)
+        }
+        this.$message.success('操作成功')
+        this.knowledgeDialogVisible = false
+        this.$refs.knowledgeTable.loadKnowledgeList()
+      } catch (e) {
+        this.$message.error(e.message)
+      }
     },
 
     async deleteKnowledge(row) {
