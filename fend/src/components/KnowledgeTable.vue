@@ -2,7 +2,7 @@
   <div>
     <el-table
       ref="table"
-      :data="tableData"
+      :data="knowledgeState.tableData"
       border
       :height="tableHeight"
       @selection-change="handleSelectionChange">
@@ -35,19 +35,19 @@
       <el-pagination
         background
         layout="total, sizes, prev, pager, next, jumper"
-        :current-page.sync="pagination.page"
-        :page-size.sync="pagination.pageSize"
-        :total="pagination.total"
+        :current-page.sync="knowledgeState.pagination.page"
+        :page-size.sync="knowledgeState.pagination.pageSize"
+        :total="knowledgeState.pagination.total"
         :page-sizes="[10,20,50,100]"
-        @current-change="loadKnowledgeList"
-        @size-change="loadKnowledgeList">
+        @current-change="loadData"
+        @size-change="loadData">
       </el-pagination>
     </div>
   </div>
 </template>
 
 <script>
-import { getKnowledgeList } from '../api/knowledge'
+import { useKnowledge } from '@/composables/useKnowledge'
 
 export default {
   name: 'KnowledgeTable',
@@ -70,22 +70,19 @@ export default {
     }
   },
   data() {
+    const { state, loadKnowledgeList } = useKnowledge()
     return {
-      tableData: [],
-      tableHeight: 400,
-      pagination: {
-        page: 1,
-        pageSize: 10,
-        total: 0
-      }
+      knowledgeState: state,
+      fetchKnowledgeList: loadKnowledgeList,
+      tableHeight: 400
     }
   },
   watch: {
     filters: {
       deep: true,
       handler() {
-        this.pagination.page = 1
-        this.loadKnowledgeList()
+        this.knowledgeState.pagination.page = 1
+        this.loadData()
       }
     }
   },
@@ -94,7 +91,7 @@ export default {
       this.computeHeight()
       window.addEventListener('resize', this.computeHeight)
     })
-    this.loadKnowledgeList()
+    this.loadData()
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.computeHeight)
@@ -112,26 +109,9 @@ export default {
     handleSelectionChange(val) {
       this.$emit('selection-change', val)
     },
-    async loadKnowledgeList() {
-      const params = {
-        relatedCategoryIds: this.filters.categoryIds,
-        title: this.filters.title,
-        tagName: this.filters.tagName,
-        status: this.filters.status,
-        visibilityName: this.filters.visibilityName,
-        questionNo: this.filters.questionNo,
-        createdAt: this.filters.createdAt,
-        page: this.pagination.page,
-        pageSize: this.pagination.pageSize
-      }
-      try {
-        const data = await getKnowledgeList(params)
-        this.tableData = data.records
-        this.pagination.total = data.total
-        this.$emit('pagination-change', { ...this.pagination })
-      } catch (e) {
-        this.$message.error(e.message)
-      }
+    async loadData() {
+      await this.fetchKnowledgeList({ ...this.filters })
+      this.$emit('pagination-change', { ...this.knowledgeState.pagination })
     }
   }
 }

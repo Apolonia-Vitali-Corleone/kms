@@ -13,7 +13,7 @@
         >
           <el-tree
             ref="catTree"
-            :data="categoryTree"
+            :data="categoryState.categoryTree"
             node-key="id"
             show-checkbox
             :props="{ label: 'name', children: 'children' }"
@@ -30,7 +30,7 @@
             @close="removeCat(id)"
             class="tag-chip"
           >
-            {{ id2name[id] || id }}
+            {{ categoryState.id2name[id] || id }}
           </el-tag>
         </div>
       </el-form-item>
@@ -47,7 +47,7 @@
         <el-tag>标签</el-tag>
         <el-select v-model="queryForm.tagName" placeholder="请选择标签" clearable>
           <el-option
-            v-for="item in tagOptions"
+            v-for="item in tagState.tagOptions"
             :key="item.id"
             :label="item.name"
             :value="item.name"
@@ -105,21 +105,12 @@
 </template>
 
 <script>
+import { useCategory } from '@/composables/useCategory'
+import { useTag } from '@/composables/useTag'
+
 export default {
   name: 'KnowledgeFilter',
   props: {
-    categoryTree: {
-      type: Array,
-      default: () => []
-    },
-    id2name: {
-      type: Object,
-      default: () => ({})
-    },
-    tagOptions: {
-      type: Array,
-      default: () => []
-    },
     visibilityOptions: {
       type: Array,
       default: () => []
@@ -130,7 +121,11 @@ export default {
     }
   },
   data() {
+    const { state: categoryState } = useCategory()
+    const { state: tagState } = useTag()
     return {
+      categoryState,
+      tagState,
       queryForm: {
         categoryIds: [],
         title: '',
