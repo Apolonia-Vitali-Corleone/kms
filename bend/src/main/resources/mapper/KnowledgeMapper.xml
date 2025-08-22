@@ -6,19 +6,14 @@
     <select id="selectPageByFilters" resultType="com.kms.entity.KnowledgeDO">
         SELECT k.*
         FROM knowledge k
-        <if test="p.relatedCategories != null and p.relatedCategories.size() > 0">
-            JOIN (
-            SELECT kid
-            FROM cok
-            WHERE name IN
-            <foreach collection="p.relatedCategories" item="n" open="(" separator="," close=")">
-                #{n}
-            </foreach>
-            GROUP BY kid
-            HAVING COUNT(DISTINCT name) = #{p.relatedCategories.size}
-            ) c ON c.kid = k.id
-        </if>
         <where>
+            <if test="p.relatedCategories != null and p.relatedCategories.size() > 0">
+                AND (
+                <foreach collection="p.relatedCategories" item="rc" separator=" OR ">
+                    FIND_IN_SET(#{rc}, k.related_categories)
+                </foreach>
+                )
+            </if>
             <if test="p.title != null and p.title != ''">
                 AND k.title LIKE CONCAT('%', #{p.title}, '%')
             </if>

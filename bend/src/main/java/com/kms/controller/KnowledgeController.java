@@ -40,6 +40,11 @@ public class KnowledgeController {
                 relatedCategories, tagName, visibilityName, questionNo, startDate, endDate));
     }
 
+    @PostMapping("/search")
+    public R<?> search(@RequestBody KnowledgeQueryReq req) {
+        return R.ok(knowledgeService.page(req));
+    }
+
     @GetMapping("/{id}")
     public R<?> get(@PathVariable Long id) {
         return R.ok(knowledgeService.get(id));

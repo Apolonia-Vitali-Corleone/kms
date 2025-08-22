@@ -2,6 +2,7 @@ package com.kms.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.kms.dto.KnowledgeCreateReq;
+import com.kms.dto.KnowledgeQueryReq;
 import com.kms.dto.KnowledgeUpdateReq;
 import com.kms.dto.PageReq;
 import com.kms.dto.PageResp;
@@ -36,4 +37,6 @@ public interface KnowledgeService {
                             Integer questionNo,
                             LocalDate startDate,
                             LocalDate endDate);
+
+    IPage<KnowledgeDO> page(KnowledgeQueryReq req);
 }
