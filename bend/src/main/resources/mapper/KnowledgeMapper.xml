@@ -7,7 +7,7 @@
         SELECT k.*
         FROM knowledge k
         <where>
-            <if test="p.relatedCategories != null && !p.relatedCategories.isEmpty()">
+            <if test="p.relatedCategories != null and p.relatedCategories.size > 0">
                 AND k.category_name IN
                 <foreach collection="p.relatedCategories" item="rc" open="(" separator="," close=")">
                     #{rc}
