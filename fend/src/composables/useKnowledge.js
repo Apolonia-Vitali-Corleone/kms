@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import { searchKnowledge } from '@/api/knowledge'
+import { useCategory } from '@/composables/useCategory'
 
 const state = Vue.observable({
   tableData: [],
@@ -10,9 +11,11 @@ const state = Vue.observable({
   }
 })
 
+const { state: categoryState } = useCategory()
+
 async function search(filters = {}) {
   const payload = {
-    relatedCategories: filters.categoryIds,
+    relatedCategories: (filters.categoryIds || []).map(id => categoryState.id2name[id]).filter(Boolean),
     title: filters.title,
     tagName: filters.tagName,
     status: filters.status,
