@@ -1,47 +1,12 @@
 <template>
   <div>
     <el-container class="kms-knowledge">
-      <el-aside width="20%" class="kms-tree">
-        <div class="tree-toolbar">
-          <el-button type="primary" size="mini" @click="openCategoryDialog()">新增类目</el-button>
-        </div>
-
-        <!--这下面是左侧的那棵树-->
-        <el-tree
-            ref="categoryTree"
-            :data="categoryTree"
-            node-key="id"
-            :props="{ label: 'name' }"
-            highlight-current
-            @node-click="handleCategoryClick"
-            class="tree">
-        <span class="custom-tree-node" slot-scope="{ node, data }">
-          <span>{{ data.name }}</span>
-          <span class="tree-actions">
-            <el-tooltip content="查看" placement="top">
-              <i class="el-icon-view" @click.stop="viewCategory(data)"></i>
-            </el-tooltip>
-            <el-tooltip content="新增" placement="top">
-              <i class="el-icon-plus" @click.stop="openCategoryDialog(data)"></i>
-            </el-tooltip>
-            <el-tooltip content="重命名" placement="top">
-              <i class="el-icon-edit" @click.stop="renameCategory(data)"></i>
-            </el-tooltip>
-            <el-tooltip content="删除" placement="top">
-              <i class="el-icon-delete" @click.stop="deleteCategory(data)"></i>
-            </el-tooltip>
-            <el-switch
-                v-model="data.status"
-                :active-value="1"
-                :inactive-value="0"
-                @change="updateCategoryStatusByButton(data)"
-                active-color="#13ce66"
-                inactive-color="#909399">
-            </el-switch>
-          </span>
-        </span>
-        </el-tree>
-      </el-aside>
+      <CategoryTree
+        :category-tree="categoryTree"
+        :current-category-id="currentCategoryId"
+        @select="currentCategoryId = $event"
+        @refresh="loadCategoryTree"
+      />
       <!--
       这是他妈的搜索框
       数据是他妈的queryForm
@@ -228,36 +193,8 @@
       </el-main>
     </el-container>
 
-    <!-- Category Dialog -->
-    <el-dialog :title="categoryDialogTitle" :visible.sync="categoryDialogVisible">
-      <el-form :model="categoryForm" ref="categoryForm" label-width="80px">
-        <el-form-item label="名称" prop="name" :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]">
-          <el-input v-model="categoryForm.name"></el-input>
-        </el-form-item>
-        <el-form-item label="推荐">
-          <el-select v-model="categoryForm.recommend">
-            <el-option label="否" :value="0"></el-option>
-            <el-option label="是" :value="1"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="categoryForm.status">
-            <el-option label="启用" :value="1"></el-option>
-            <el-option label="停用" :value="0"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="categoryForm.remark"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer">
-        <el-button @click="categoryDialogVisible=false">取消</el-button>
-        <el-button type="primary" @click="submitCategory">确定</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- Knowledge Dialog -->
-    <el-dialog :title="knowledgeDialogTitle" :visible.sync="knowledgeDialogVisible" width="800px">
+      <!-- Knowledge Dialog -->
+      <el-dialog :title="knowledgeDialogTitle" :visible.sync="knowledgeDialogVisible" width="800px">
       <el-form :model="knowledgeForm" ref="knowledgeForm" label-width="100px">
         <el-form-item label="分类" prop="categoryName"
                       :rules="[{ required: true, message: '请选择分类', trigger: 'change' }]">
@@ -330,16 +267,8 @@
       </div>
     </el-dialog>
 
-    <!-- Category Detail Dialog -->
-    <el-dialog title="类目详情" :visible.sync="categoryDetailDialogVisible">
-      <el-form label-width="80px">
-        <el-form-item label="名称">{{ categoryDetail.name }}</el-form-item>
-        <el-form-item label="备注">{{ categoryDetail.remark }}</el-form-item>
-      </el-form>
-    </el-dialog>
-
-    <!-- Knowledge Detail Dialog -->
-    <el-dialog title="知识详情" :visible.sync="knowledgeDetailDialogVisible" width="60%">
+      <!-- Knowledge Detail Dialog -->
+      <el-dialog title="知识详情" :visible.sync="knowledgeDetailDialogVisible" width="60%">
       <h3>知识标题： {{ knowledgeDetail.title }}</h3>
       <h3>知识标签： {{ knowledgeDetail.tagName }}</h3>
       <h3>知识状态： {{ knowledgeDetail.status }}</h3>
@@ -363,7 +292,7 @@ import {
   deleteKnowledge as deleteKnowledgeApi,
   batchDeleteKnowledge
 } from '../api/knowledge'
-import {getCategory, getRelatedCategories} from '@/api/category'
+import {getRelatedCategories} from '@/api/category'
 import {getAllTags} from '@/api/tag'
 import {getAllVisibilities} from '@/api/visibility'
 import {
@@ -371,9 +300,11 @@ import {
   deleteAttachment as apiDeleteAttachment,
   downloadAttachment as apiDownloadAttachment
 } from '../api/attachment'
+import CategoryTree from '../components/CategoryTree.vue'
 
 export default {
   name: 'KmsKnowledge',
+  components: { CategoryTree },
   data() {
     return {
       id2name: {},
@@ -382,16 +313,6 @@ export default {
       categoryTree: [],
       flatCategories: [],
       currentCategoryId: null,
-      categoryDialogVisible: false,
-      categoryDialogTitle: '',
-      categoryForm: {
-        id: null,
-        name: '',
-        parentId: null,
-        recommend: 0,
-        status: 1,
-        remark: ''
-      },
       // ...
       queryForm: {
         categoryIds: [],       // ✅ 存 id，发后端最稳
@@ -435,8 +356,6 @@ export default {
         content: '',
         attachments: []
       },
-      categoryDetailDialogVisible: false,
-      categoryDetail: {},
       knowledgeDetailDialogVisible: false,
       knowledgeDetail: {}
     }
@@ -545,87 +464,16 @@ export default {
         // 其余保持你的原逻辑...
         if (this.categoryTree.length && !this.currentCategoryId) {
           this.currentCategoryId = this.categoryTree[0].id
-          this.$nextTick(() => {
-            this.$refs.categoryTree.setCurrentKey(this.currentCategoryId)
-          })
         }
         await this.loadRelatedCategory()
       } catch (e) {
         this.$message.error(e.message)
       }
     },
-    // 点击之后获取到当前的这个category的id值
-    handleCategoryClick(data) {
-      this.currentCategoryId = data.id
-    },
-    // 打开这个对话框，新增类目
-    openCategoryDialog(parent) {
-      this.categoryDialogTitle = '新增类目'
-      // parent ? '新增类目' : '新建类目'
-      this.showParentSelect = false
-      this.categoryForm = {
-        id: null,
-        name: '',
-        parentId: parent ? parent.id : null,
-        recommend: 0,
-        status: 1,
-        remark: ''
-      }
-      this.categoryDialogVisible = true
-    },
-    // 修改这个category的名称
-    renameCategory(data) {
-      this.categoryDialogTitle = '重命名类目'
-      this.categoryForm = {
-        ...data,
-        parentId: data.parentId || data.parent_id || null
-      }
-      delete this.categoryForm.parent_id
-      this.categoryDialogVisible = true
-    },
-    // 这个是提交按钮，无论你是修改还是新增
-    async submitCategory() {
-      this.$refs.categoryForm.validate(async valid => {
-        if (!valid) return
-        try {
-          const url = this.categoryForm.id ? '/category/update' : '/category/create'
-          await http.post(url, this.categoryForm)
-          this.$message.success('操作成功')
-          this.categoryDialogVisible = false
-          await this.loadCategoryTree()
-          await this.loadRelatedCategory()
-        } catch (e) {
-          this.$message.error(e.message)
-        }
-      })
-    },
-    // 这个是category的删除按钮
-    async deleteCategory(data) {
-      this.$confirm('确定删除该类目吗？', '提示', {type: 'warning'}).then(async () => {
-        try {
-          await http.post('/category/delete', {id: data.id})
-          this.$message.success('删除成功')
-          await this.loadCategoryTree()
-        } catch (e) {
-          this.$message.error(e.message)
-        }
-      }).catch(() => {
-      })
-    },
-    // 更新状态，就是那个按钮的操作，
-    async updateCategoryStatusByButton(data) {
-      try {
-        await http.post('/category/status', {id: data.id, status: data.status})
-        this.$message.success('操作成功')
-      } catch (e) {
-        this.$message.error(e.message)
-        data.status = data.status === 1 ? 0 : 1
-      }
-    },
-    //
-    //
-    //
-    //
+      //
+      //
+      //
+      //
     //
     // 接下来是他妈的右侧的这帮东西我操你妈的真难写
     //
@@ -737,14 +585,6 @@ export default {
       }
     },
 
-    async viewCategory(data) {
-      try {
-        this.categoryDetail = await getCategory(data.id)
-        this.categoryDetailDialogVisible = true
-      } catch (e) {
-        this.$message.error(e.message)
-      }
-    },
 
     async submitKnowledge() {
       this.$refs.knowledgeForm.validate(async valid => {
@@ -946,33 +786,6 @@ export default {
   height: 100%;
 }
 
-.kms-tree {
-  border-right: 1px solid #ebeef5;
-  overflow-y: auto;
-}
-
-.tree-toolbar {
-  padding: 10px;
-  text-align: center;
-}
-
-.tree {
-  padding: 0 10px 10px;
-}
-
-.custom-tree-node {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.tree-actions i {
-  font-size: 14px;
-  margin-left: 5px;
-  cursor: pointer;
-  color: #409EFF;
-}
 
 .kms-main {
   display: flex;
@@ -996,10 +809,6 @@ export default {
   height: 100vh;
 }
 
-.kms-tree {
-  border-right: 1px solid #ebeef5;
-  overflow-y: auto;
-}
 
 /* 主区用列布局并允许子项伸展 */
 .kms-main {
