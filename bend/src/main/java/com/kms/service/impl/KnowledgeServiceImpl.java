@@ -8,7 +8,6 @@ import com.kms.service.AttachmentService;
 import com.kms.entity.KnowledgeDO;
 import com.kms.mapper.KnowledgeMapper;
 import com.kms.service.KnowledgeService;
-import com.kms.vo.KnowledgeDetailVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -116,10 +115,8 @@ public class KnowledgeServiceImpl implements KnowledgeService {
     @Override
     public KnowledgeDO get(Long id) {
         KnowledgeDO entity = knowledgeMapper.selectById(id);
-        AttachmentDTO attachments = attachmentService.getByKId(id);
-
-        KnowledgeDetailVO knowledgeDetailVO = new KnowledgeDetailVO();
-
+        List<AttachmentDTO> attachments = attachmentService.listByKnowledgeId(id);
+        entity.setAttachments(attachments);
         return entity;
     }
 

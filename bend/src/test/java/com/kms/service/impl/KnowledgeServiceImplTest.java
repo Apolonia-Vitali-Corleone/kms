@@ -57,6 +57,9 @@ public class KnowledgeServiceImplTest {
         req.setContent("cnt");
         req.setAttachments(java.util.Collections.singletonList(new AttachmentDTO()));
         service.create(req);
+        ArgumentCaptor<KnowledgeDO> captor = ArgumentCaptor.forClass(KnowledgeDO.class);
+        Mockito.verify(mapper).insert(captor.capture());
+        org.junit.jupiter.api.Assertions.assertEquals("c", captor.getValue().getCategoryName());
         Mockito.verify(attachmentService).saveBatch(Mockito.anyLong(), Mockito.anyList());
     }
 
@@ -92,11 +95,14 @@ public class KnowledgeServiceImplTest {
         Mockito.when(mapper.selectById(1L)).thenReturn(existing);
         KnowledgeServiceImpl service = new KnowledgeServiceImpl(mapper, attachmentService);
         KnowledgeUpdateReq req = new KnowledgeUpdateReq();
+        req.setCategoryName("c2");
         req.setAttachments(java.util.Collections.singletonList(new AttachmentDTO()));
         service.update(1L, req);
         Mockito.verify(attachmentService).removeByKnowledgeId(1L);
         Mockito.verify(attachmentService).saveBatch(1L, req.getAttachments());
-        Mockito.verify(mapper).updateById(Mockito.any(KnowledgeDO.class));
+        ArgumentCaptor<KnowledgeDO> updateCaptor = ArgumentCaptor.forClass(KnowledgeDO.class);
+        Mockito.verify(mapper).updateById(updateCaptor.capture());
+        org.junit.jupiter.api.Assertions.assertEquals("c2", updateCaptor.getValue().getCategoryName());
     }
 }
 
