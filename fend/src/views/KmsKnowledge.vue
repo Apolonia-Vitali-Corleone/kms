@@ -25,52 +25,15 @@
           @batch-delete="batchDelete"
           @export="exportExcel"
         />
-
-
-        <el-table
-            ref="table"
-            :data="tableData"
-            border
-            :height="tableHeight"
-            @selection-change="handleSelectionChange">
-          <el-table-column type="selection" width="55"></el-table-column>
-          <el-table-column prop="title" label="知识标题"></el-table-column>
-          <el-table-column prop="tagName" label="知识标签"></el-table-column>
-          <el-table-column prop="status" label="知识状态" width="100">
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.status===1?'success':'info'">{{
-                  scope.row.status === 1 ? '启用' : '停用'
-                }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="keywords" label="关键词"></el-table-column>
-          <el-table-column prop="categoryName" label="知识分类"></el-table-column>
-          <el-table-column prop="visibilityName" label="可见度"></el-table-column>
-          <el-table-column prop="questionNo" label="问题序号" width="100"></el-table-column>
-          <el-table-column prop="createdBy" label="创建人" width="120"></el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="160"></el-table-column>
-          <el-table-column label="操作" width="240">
-            <template slot-scope="scope">
-              <el-button type="text" size="small" @click="viewKnowledge(scope.row)">查看</el-button>
-              <el-button type="text" size="small" @click="openKnowledgeDialog(scope.row)">编辑</el-button>
-              <el-button type="text" size="small" @click="deleteKnowledge(scope.row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div class="pager" ref="pager">
-          <el-pagination
-              background
-              layout="total, sizes, prev, pager, next, jumper"
-              :current-page.sync="pagination.page"
-              :page-size.sync="pagination.pageSize"
-              :total="pagination.total"
-              :page-sizes="[10,20,50,100]"
-              @current-change="loadKnowledgeList"
-              @size-change="loadKnowledgeList">
-          </el-pagination>
-        </div>
+        <KnowledgeTable
+          ref="knowledgeTable"
+          :filters="filters"
+          :on-view="viewKnowledge"
+          :on-edit="openKnowledgeDialog"
+          :on-delete="deleteKnowledge"
+          @selection-change="handleSelectionChange"
+          @pagination-change="handlePaginationChange"
+        />
       </el-main>
     </el-container>
 
@@ -166,7 +129,6 @@
 <script>
 import http from '../api/http'
 import {
-  getKnowledgeList,
   getKnowledge,
   createKnowledge,
   updateKnowledge,
@@ -183,15 +145,15 @@ import {
 } from '../api/attachment'
 import CategoryTree from '../components/CategoryTree.vue'
 import KnowledgeFilter from '../components/KnowledgeFilter.vue'
+import KnowledgeTable from '../components/KnowledgeTable.vue'
 
 export default {
   name: 'KmsKnowledge',
-  components: { CategoryTree, KnowledgeFilter },
+  components: { CategoryTree, KnowledgeFilter, KnowledgeTable },
   data() {
     return {
       id2name: {},
       relatedCategory: [],
-      tableHeight: 400, // 先声明为响应式，避免 warn
       categoryTree: [],
       flatCategories: [],
       currentCategoryId: null,
@@ -206,7 +168,6 @@ export default {
       },
       tagOptions: [],
       visibilityOptions: [],
-      tableData: [],
       pagination: {
         page: 1,
         pageSize: 10,
@@ -247,22 +208,10 @@ export default {
     this.loadCategoryTree()
     // 获取相关类目
     this.loadRelatedCategory()
-    // 获取右下的这个知识列表
-    this.loadKnowledgeList()
     // 获取标签
     this.loadTag()
     // 获取可见度
     this.loadVisibility()
-  },
-  mounted() {
-    // 保留：mounted 只做高度计算与事件绑定
-    this.$nextTick(() => {
-      this.computeHeight()
-      window.addEventListener('resize', this.computeHeight)
-    })
-  },
-  beforeDestroy() {
-    window.removeEventListener('resize', this.computeHeight)
   },
   methods: {
     handleFilterChange(val) {
@@ -270,27 +219,15 @@ export default {
     },
     handleFilterSearch(val) {
       this.filters = val
-      this.pagination.page = 1
-      this.loadKnowledgeList()
     },
     handleFilterReset(val) {
       this.filters = val
-      this.pagination.page = 1
-      this.loadKnowledgeList()
     },
-    computeHeight() {
-      // 取表格真实顶部位置
-      const tableEl = this.$refs.table && this.$refs.table.$el
-      if (!tableEl) return
-      const top = tableEl.getBoundingClientRect().top
-      // 分页区高度（没有则为 0）
-      const pagerH = this.$refs.pager ? this.$refs.pager.offsetHeight : 0
-      // 底部留空隙，避免紧贴底边
-      const gap = 12
-      // 直接用视口高度计算可用空间
-      const h = window.innerHeight - top - pagerH - gap
-      // 最小高度兜底，避免极端情况下过小
-      this.tableHeight = Math.max(h, 240)
+    handleSelectionChange(val) {
+      this.multipleSelection = val
+    },
+    handlePaginationChange(p) {
+      this.pagination = p
     },
     // 获取相关类目
     async loadRelatedCategory() {
@@ -328,53 +265,6 @@ export default {
         this.$message.error(e.message)
       }
     },
-      //
-      //
-      //
-      //
-    //
-    // 接下来是他妈的右侧的这帮东西我操你妈的真难写
-    //
-    //
-    //
-    //
-    //
-    //
-    // 处理选择？？不在乎这个，不用管
-    handleSelectionChange(val) {
-      this.multipleSelection = val
-    },
-    // 搜索框的重置按钮
-      this.pagination.page = 1
-      this.loadKnowledgeList()
-    },
-    //这它妈就是搜索的那个按钮
-    async loadKnowledgeList() {
-      const params = {
-        relatedCategoryIds: this.filters.categoryIds,
-        // relatedCategoryIds: this.filters.categoryIds,  // ✅
-        title: this.filters.title,
-        tagName: this.filters.tagName,
-        status: this.filters.status,
-        visibilityName: this.filters.visibilityName,
-        questionNo: this.filters.questionNo,
-        createdAt: this.filters.createdAt,
-        page: this.pagination.page,
-        pageSize: this.pagination.pageSize,
-      }
-      try {
-        // 这里调用的不是search接口。
-        // 按说应该是调用search接口的
-        const data = await getKnowledgeList(params)
-        // console.log("loadKnowledgeList----------------------")
-        // console.log(data)
-        // console.log(data.records)
-        this.tableData = data.records
-        this.pagination.total = data.total
-      } catch (e) {
-        this.$message.error(e.message)
-      }
-    },
     // ？？？？？
     async openKnowledgeDialog(row) {
       if (row && row.id) {
@@ -405,7 +295,7 @@ export default {
           visibilityName: '',
           keywords: '',
           status: 1,
-          questionNo: this.tableData.length + 1,
+          questionNo: this.pagination.total + 1,
           createdBy: '',
           summary: '',
           content: '',
@@ -446,7 +336,7 @@ export default {
           }
           this.$message.success('操作成功')
           this.knowledgeDialogVisible = false
-          this.loadKnowledgeList()
+          this.$refs.knowledgeTable.loadKnowledgeList()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -458,7 +348,7 @@ export default {
         try {
           await deleteKnowledgeApi(row.id)
           this.$message.success('删除成功')
-          this.loadKnowledgeList()
+          this.$refs.knowledgeTable.loadKnowledgeList()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -473,7 +363,7 @@ export default {
         try {
           await batchDeleteKnowledge(ids)
           this.$message.success('删除成功')
-          this.loadKnowledgeList()
+           this.$refs.knowledgeTable.loadKnowledgeList()
         } catch (e) {
           this.$message.error(e.message)
         }
