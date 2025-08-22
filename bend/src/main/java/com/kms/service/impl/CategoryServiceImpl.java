@@ -1,5 +1,6 @@
 package com.kms.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.kms.dto.CategoryTreeNode;
 import com.kms.entity.CategoryDO;
 import com.kms.mapper.CategoryMapper;
@@ -51,6 +52,17 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void delete(Long id) {
+        // 先查出所有子节点
+        List<CategoryDO> children = categoryMapper.selectList(
+                new QueryWrapper<CategoryDO>().eq("parent_id", id)
+        );
+
+        // 递归删除子节点
+        for (CategoryDO child : children) {
+            delete(child.getId());
+        }
+
+        // 最后删除自己
         categoryMapper.deleteById(id);
     }
 
