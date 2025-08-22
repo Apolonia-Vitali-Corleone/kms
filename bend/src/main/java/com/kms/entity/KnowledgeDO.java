@@ -21,6 +21,9 @@ public class KnowledgeDO {
 
     private String title;
 
+    @TableField("category_name")
+    private String categoryName;
+
     private String tagName;
 
     private String visibilityName;
@@ -41,5 +44,8 @@ public class KnowledgeDO {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @TableField(exist = false)
+    private List<AttachmentDTO> attachments;
 
 }
