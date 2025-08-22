@@ -2,55 +2,50 @@
   <div>
     <el-container class="kms-knowledge">
       <CategoryTree
-        :category-tree="categoryTree"
-        :current-category-id="currentCategoryId"
-        @select="currentCategoryId = $event"
-        @refresh="fetchCategoryTree"
+          :category-tree="categoryTree"
+          :current-category-id="currentCategoryId"
+          @select="currentCategoryId = $event"
+          @refresh="fetchCategoryTree"
       />
-      <!--
-      这是他妈的搜索框
-      数据是他妈的queryForm
-      -->
       <el-main class="kms-main">
         <KnowledgeFilter
-          :visibility-options="visibilityOptions"
-          :disable-batch="!multipleSelection.length"
-          @change="handleFilterChange"
-          @search="handleFilterSearch"
-          @reset="handleFilterReset"
-          @add="openKnowledgeDialog()"
-          @batch-delete="batchDelete"
-          @export="exportExcel"
+            :visibility-options="visibilityOptions"
+            :disable-batch="!multipleSelection.length"
+            @change="handleFilterChange"
+            @search="handleFilterSearch"
+            @reset="handleFilterReset"
+            @add="openKnowledgeDialog()"
+            @batch-delete="batchDelete"
+            @export="exportExcel"
         />
         <KnowledgeTable
-          ref="knowledgeTable"
-          :filters="filters"
-          :on-view="viewKnowledge"
-          :on-edit="openKnowledgeDialog"
-          :on-delete="deleteKnowledge"
-          @selection-change="handleSelectionChange"
-          @pagination-change="handlePaginationChange"
+            ref="knowledgeTable"
+            :filters="filters"
+            :on-view="viewKnowledge"
+            :on-edit="openKnowledgeDialog"
+            :on-delete="deleteKnowledge"
+            @selection-change="handleSelectionChange"
+            @pagination-change="handlePaginationChange"
         />
       </el-main>
     </el-container>
-
     <KnowledgeDialog
-      :visible="knowledgeDialogVisible"
-      :title="knowledgeDialogTitle"
-      :formData="knowledgeForm"
-      :flat-categories="flatCategories"
-      :tag-options="tagOptions"
-      :visibility-options="visibilityOptions"
-      :upload-attachment="uploadAttachment"
-      :remove-attachment="removeAttachment"
-      :download-attachment="downloadAttachment"
-      @submit="submitKnowledge"
-      @close="knowledgeDialogVisible = false"
+        :visible="knowledgeDialogVisible"
+        :title="knowledgeDialogTitle"
+        :formData="knowledgeForm"
+        :flat-categories="flatCategories"
+        :tag-options="tagOptions"
+        :visibility-options="visibilityOptions"
+        :upload-attachment="uploadAttachment"
+        :remove-attachment="removeAttachment"
+        :download-attachment="downloadAttachment"
+        @submit="submitKnowledge"
+        @close="knowledgeDialogVisible = false"
     />
     <KnowledgeDetailDialog
-      :visible="knowledgeDetailDialogVisible"
-      :detail-data="knowledgeDetail"
-      @close="knowledgeDetailDialogVisible = false"
+        :visible="knowledgeDetailDialogVisible"
+        :detail-data="knowledgeDetail"
+        @close="knowledgeDetailDialogVisible = false"
     />
   </div>
 </template>
@@ -70,8 +65,8 @@ import {
   deleteAttachment as apiDeleteAttachment,
   downloadAttachment as apiDownloadAttachment
 } from '../api/attachment'
-import { useCategory } from '@/composables/useCategory'
-import { useTag } from '@/composables/useTag'
+import {useCategory} from '@/composables/useCategory'
+import {useTag} from '@/composables/useTag'
 import CategoryTree from '../components/CategoryTree.vue'
 import KnowledgeFilter from '../components/KnowledgeFilter.vue'
 import KnowledgeTable from '../components/KnowledgeTable.vue'
@@ -80,10 +75,10 @@ import KnowledgeDetailDialog from '../components/KnowledgeDetailDialog.vue'
 
 export default {
   name: 'KmsKnowledge',
-  components: { CategoryTree, KnowledgeFilter, KnowledgeTable, KnowledgeDialog, KnowledgeDetailDialog },
+  components: {CategoryTree, KnowledgeFilter, KnowledgeTable, KnowledgeDialog, KnowledgeDetailDialog},
   data() {
-    const { state: categoryState, loadCategoryTree } = useCategory()
-    const { state: tagState, loadTag } = useTag()
+    const {state: categoryState, loadCategoryTree} = useCategory()
+    const {state: tagState, loadTag} = useTag()
     return {
       categoryState,
       tagState,
@@ -273,7 +268,7 @@ export default {
         try {
           await batchDeleteKnowledge(ids)
           this.$message.success('删除成功')
-           this.$refs.knowledgeTable.loadData()
+          this.$refs.knowledgeTable.loadData()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -371,7 +366,6 @@ export default {
 /* 标签输入样式：看起来像 el-input，支持自动增高换行 */
 
 
-
 .tag-chip {
   margin: 2px 4px 2px 0;
 }
@@ -441,3 +435,4 @@ export default {
 
 /* 让可点输入框和 el-tag 同行显示 */
 
+</style>
