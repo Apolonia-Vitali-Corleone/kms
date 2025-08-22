@@ -5,7 +5,7 @@
         :category-tree="categoryTree"
         :current-category-id="currentCategoryId"
         @select="currentCategoryId = $event"
-        @refresh="loadCategoryTree"
+        @refresh="fetchCategoryTree"
       />
       <!--
       这是他妈的搜索框
@@ -13,9 +13,6 @@
       -->
       <el-main class="kms-main">
         <KnowledgeFilter
-          :category-tree="categoryTree"
-          :id2name="id2name"
-          :tag-options="tagOptions"
           :visibility-options="visibilityOptions"
           :disable-batch="!multipleSelection.length"
           @change="handleFilterChange"
@@ -67,14 +64,14 @@ import {
   deleteKnowledge as deleteKnowledgeApi,
   batchDeleteKnowledge
 } from '../api/knowledge'
-import {getRelatedCategories} from '@/api/category'
-import {getAllTags} from '@/api/tag'
 import {getAllVisibilities} from '@/api/visibility'
 import {
   uploadAttachment as apiUploadAttachment,
   deleteAttachment as apiDeleteAttachment,
   downloadAttachment as apiDownloadAttachment
 } from '../api/attachment'
+import { useCategory } from '@/composables/useCategory'
+import { useTag } from '@/composables/useTag'
 import CategoryTree from '../components/CategoryTree.vue'
 import KnowledgeFilter from '../components/KnowledgeFilter.vue'
 import KnowledgeTable from '../components/KnowledgeTable.vue'
@@ -85,12 +82,13 @@ export default {
   name: 'KmsKnowledge',
   components: { CategoryTree, KnowledgeFilter, KnowledgeTable, KnowledgeDialog, KnowledgeDetailDialog },
   data() {
+    const { state: categoryState, loadCategoryTree } = useCategory()
+    const { state: tagState, loadTag } = useTag()
     return {
-      id2name: {},
-      relatedCategory: [],
-      categoryTree: [],
-      flatCategories: [],
-      currentCategoryId: null,
+      categoryState,
+      tagState,
+      fetchCategoryTree: loadCategoryTree,
+      fetchTag: loadTag,
       filters: {
         categoryIds: [],
         title: '',
@@ -100,7 +98,6 @@ export default {
         questionNo: null,
         createdAt: '',
       },
-      tagOptions: [],
       visibilityOptions: [],
       pagination: {
         page: 1,
@@ -130,6 +127,26 @@ export default {
   },
 
   computed: {
+    categoryTree() {
+      return this.categoryState.categoryTree
+    },
+    flatCategories() {
+      return this.categoryState.flatCategories
+    },
+    id2name() {
+      return this.categoryState.id2name
+    },
+    currentCategoryId: {
+      get() {
+        return this.categoryState.currentCategoryId
+      },
+      set(val) {
+        this.categoryState.currentCategoryId = val
+      }
+    },
+    tagOptions() {
+      return this.tagState.tagOptions
+    },
     categoryNamesText() {
       const tree = this.$refs.catTree
       if (!tree) return ''
@@ -139,11 +156,9 @@ export default {
 
   created() {
     // 先自动获取左侧的树
-    this.loadCategoryTree()
-    // 获取相关类目
-    this.loadRelatedCategory()
+    this.fetchCategoryTree()
     // 获取标签
-    this.loadTag()
+    this.fetchTag()
     // 获取可见度
     this.loadVisibility()
   },
@@ -162,42 +177,6 @@ export default {
     },
     handlePaginationChange(p) {
       this.pagination = p
-    },
-    // 获取相关类目
-    async loadRelatedCategory() {
-      try {
-        const data = await getRelatedCategories();
-        this.relatedCategory = data
-        console.log("from loadRelatedCategory")
-        console.log(data)
-      } catch (e) {
-        this.$message.error(e.message)
-      }
-    },
-    // 这是他妈的获取左侧的那棵树的
-    // 覆盖你现有的 loadCategoryTree，把 id2name 填好
-    async loadCategoryTree() {
-      try {
-        const data = await http.get('/category/tree')
-        this.categoryTree = data || []
-        this.flatCategories = []
-        this.id2name = {}
-        const walk = (nodes) => {
-          nodes.forEach(n => {
-            this.flatCategories.push({id: n.id, name: n.name})
-            this.id2name[n.id] = n.name                // <== 建立映射
-            if (n.children) walk(n.children)
-          })
-        }
-        walk(this.categoryTree)
-        // 其余保持你的原逻辑...
-        if (this.categoryTree.length && !this.currentCategoryId) {
-          this.currentCategoryId = this.categoryTree[0].id
-        }
-        await this.loadRelatedCategory()
-      } catch (e) {
-        this.$message.error(e.message)
-      }
     },
     // ？？？？？
     async openKnowledgeDialog(row) {
@@ -268,7 +247,7 @@ export default {
         }
         this.$message.success('操作成功')
         this.knowledgeDialogVisible = false
-        this.$refs.knowledgeTable.loadKnowledgeList()
+        this.$refs.knowledgeTable.loadData()
       } catch (e) {
         this.$message.error(e.message)
       }
@@ -279,7 +258,7 @@ export default {
         try {
           await deleteKnowledgeApi(row.id)
           this.$message.success('删除成功')
-          this.$refs.knowledgeTable.loadKnowledgeList()
+          this.$refs.knowledgeTable.loadData()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -294,7 +273,7 @@ export default {
         try {
           await batchDeleteKnowledge(ids)
           this.$message.success('删除成功')
-           this.$refs.knowledgeTable.loadKnowledgeList()
+           this.$refs.knowledgeTable.loadData()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -329,14 +308,6 @@ export default {
       }).catch(e => {
         this.$message.error(e.message)
       })
-    },
-
-    async loadTag() {
-      try {
-        this.tagOptions = await getAllTags() || []
-      } catch (e) {
-        this.$message.error(e.message)
-      }
     },
 
     async loadVisibility() {
