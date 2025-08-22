@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import { getKnowledgeList } from '@/api/knowledge'
+import { searchKnowledge } from '@/api/knowledge'
 
 const state = Vue.observable({
   tableData: [],
@@ -10,23 +10,24 @@ const state = Vue.observable({
   }
 })
 
-async function loadKnowledgeList(filters) {
-  const params = {
-    relatedCategoryIds: filters.categoryIds,
+async function search(filters = {}) {
+  const payload = {
+    relatedCategories: filters.categoryIds,
     title: filters.title,
     tagName: filters.tagName,
     status: filters.status,
     visibilityName: filters.visibilityName,
     questionNo: filters.questionNo,
-    createdAt: filters.createdAt,
+    startDate: filters.createdAt && filters.createdAt.length ? filters.createdAt[0] : '',
+    endDate: filters.createdAt && filters.createdAt.length ? filters.createdAt[1] : '',
     page: state.pagination.page,
     pageSize: state.pagination.pageSize
   }
-  const data = await getKnowledgeList(params)
+  const data = await searchKnowledge(payload)
   state.tableData = data.records
   state.pagination.total = data.total
 }
 
 export function useKnowledge() {
-  return { state, loadKnowledgeList }
+  return { state, search }
 }

@@ -1,18 +1,12 @@
 import http from './http'
 
-export function getKnowledgeList(params) {
-  return http.get('/knowledge', { params })
+export function searchKnowledge(params) {
+  return http.post('/knowledge/search', params)
 }
 
 export function getKnowledge(id) {
   return http.get(`/knowledge/${id}`)
 }
-
-export function search(id) {
-  return http.post(`/knowledge/search`)
-}
-
-
 
 export function createKnowledge(data) {
   return http.post('/knowledge', data)
