@@ -3,7 +3,7 @@
     <el-container class="kms-knowledge">
       <el-aside width="20%" class="kms-tree">
         <div class="tree-toolbar">
-          <el-button type="primary" size="mini" @click="openCategoryDialog()">新建类目</el-button>
+          <el-button type="primary" size="mini" @click="openCategoryDialog()">新增类目</el-button>
         </div>
 
         <!--这下面是左侧的那棵树-->
@@ -34,7 +34,7 @@
                 v-model="data.status"
                 :active-value="1"
                 :inactive-value="0"
-                @change="toggleCategoryStatus(data)"
+                @change="updateCategoryStatusByButton(data)"
                 active-color="#13ce66"
                 inactive-color="#909399">
             </el-switch>
@@ -42,30 +42,81 @@
         </span>
         </el-tree>
       </el-aside>
-
       <!--
       这是他妈的搜索框
       数据是他妈的queryForm
       -->
       <el-main class="kms-main">
         <div class="filter-bar" ref="filterBar">
-
-          <el-form :inline="true" :model="queryForm" label-width="0">
+          <!-- 第一行：只有 关联类目 + 可点输入框 -->
+          <el-form :inline="true" :model="queryForm" label-width="0" class="filter-row-1">
             <el-form-item size="medium">
               <el-tag>关联类目</el-tag>
-              <!-- 多选类目：绑定到数组 -->
-              <el-select v-model="queryForm.categoryNames" placeholder="请选择关联类目" multiple
-                         filterable
-                         class="full-tags">
-                <el-option v-for="item in relatedCategories" :key="item.id" :label="item.name" :value="item.name"/>
-              </el-select>
-            </el-form-item>
 
+              <!-- popover A -->
+              <el-popover
+                  ref="catPop"
+                  placement="bottom-start"
+                  trigger="click"
+                  width="320"
+              >
+                <el-tree
+                    ref="catTree"
+                    :data="categoryTree"
+                    node-key="id"
+                    show-checkbox
+                    :props="{ label: 'name', children: 'children' }"
+                    :default-checked-keys="queryForm.categoryIds"
+                    :check-strictly="true"
+                    @check-change="onCatCheckChange"
+                />
+              </el-popover>
+
+              <!-- popover B（保留你的同步策略） -->
+              <el-popover
+                  ref="catPop"
+                  placement="bottom-start"
+                  trigger="click"
+                  width="320"
+                  @show="syncTreeChecks"
+              >
+                <el-tree
+                    ref="catTree"
+                    :data="categoryTree"
+                    node-key="id"
+                    show-checkbox
+                    :props="{ label: 'name', children: 'children' }"
+                    :check-strictly="true"
+                    @check-change="onCatCheckChange"
+                />
+              </el-popover>
+
+              <!-- 可点输入框（展示所选标签） -->
+              <div
+                  class="tag-input full-tags"
+                  v-popover:catPop
+                  tabindex="0"
+              >
+                <span v-if="!queryForm.categoryIds.length" class="placeholder">请选择关联类目</span>
+                <el-tag
+                    v-for="id in queryForm.categoryIds"
+                    :key="id"
+                    closable
+                    @close="removeCat(id)"
+                    class="tag-chip"
+                >
+                  {{ id2name[id] || id }}
+                </el-tag>
+              </div>
+            </el-form-item>
+          </el-form>
+
+          <!-- 第二行：其余筛选项 + 按钮（原逻辑不变） -->
+          <el-form :inline="true" :model="queryForm" label-width="0" class="filter-row-2">
             <el-form-item>
               <el-tag>标题</el-tag>
-              <el-input v-model="queryForm.title" placeholder="请输入标题" style="width: 220px; margin-left:8px;" />
+              <el-input v-model="queryForm.title" placeholder="请输入标题" style="width: 220px; margin-left:8px;"/>
             </el-form-item>
-
 
             <el-form-item>
               <el-tag>标签</el-tag>
@@ -74,16 +125,16 @@
                     v-for="item in tagOptions"
                     :key="item.id"
                     :label="item.name"
-                    :value="item.name">
-                </el-option>
+                    :value="item.name"
+                />
               </el-select>
             </el-form-item>
 
             <el-form-item>
               <el-tag>请选择状态</el-tag>
               <el-select v-model="queryForm.status" placeholder="状态" clearable>
-                <el-option label="启用" :value="1"></el-option>
-                <el-option label="停用" :value="0"></el-option>
+                <el-option label="启用" :value="1"/>
+                <el-option label="停用" :value="0"/>
               </el-select>
             </el-form-item>
 
@@ -91,11 +142,11 @@
               <el-tag>请选择可见度</el-tag>
               <el-select v-model="queryForm.visibilityName" placeholder="请选择标签" clearable>
                 <el-option
-                    v-for="item in tagOptions"
+                    v-for="item in visibilityOptions"
                     :key="item.id"
                     :label="item.name"
-                    :value="item.name">
-                </el-option>
+                    :value="item.name"
+                />
               </el-select>
             </el-form-item>
 
@@ -103,7 +154,7 @@
               <el-tag>问题序号</el-tag>
             </el-form-item>
             <el-form-item>
-              <el-input v-model.number="queryForm.questionNo" placeholder="请输入问题序号"></el-input>
+              <el-input v-model.number="queryForm.questionNo" placeholder="请输入问题序号"/>
             </el-form-item>
 
             <el-form-item>
@@ -111,14 +162,14 @@
             </el-form-item>
             <el-form-item>
               <el-date-picker
-                  v-model="queryForm.created"
+                  v-model="queryForm.createdAt"
                   type="date"
-                  placeholder="请选择创建时间">
-              </el-date-picker>
+                  placeholder="请选择创建时间"
+              />
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" icon="el-icon-search" @click="fetchList">搜索</el-button>
+              <el-button type="primary" icon="el-icon-search" @click="loadKnowledgeList">搜索</el-button>
               <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
               <el-button type="primary" icon="el-icon-plus" @click="openKnowledgeDialog()">新增知识</el-button>
               <el-button type="danger" icon="el-icon-delete" @click="batchDelete" :disabled="!multipleSelection.length">
@@ -128,6 +179,7 @@
             </el-form-item>
           </el-form>
         </div>
+
 
         <el-table
             ref="table"
@@ -166,11 +218,11 @@
               background
               layout="total, sizes, prev, pager, next, jumper"
               :current-page.sync="pagination.page"
-              :page-size.sync="pagination.page_size"
+              :page-size.sync="pagination.pageSize"
               :total="pagination.total"
               :page-sizes="[10,20,50,100]"
-              @current-change="fetchList"
-              @size-change="fetchList">
+              @current-change="loadKnowledgeList"
+              @size-change="loadKnowledgeList">
           </el-pagination>
         </div>
       </el-main>
@@ -182,17 +234,6 @@
         <el-form-item label="名称" prop="name" :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]">
           <el-input v-model="categoryForm.name"></el-input>
         </el-form-item>
-        <el-form-item label="父级" v-if="showParentSelect">
-          <el-select v-model="categoryForm.parentId" placeholder="请选择">
-            <el-option :value="null" label="根类目"></el-option>
-            <el-option
-                v-for="item in flatCategories"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"></el-option>
-          </el-select>
-        </el-form-item>
-
         <el-form-item label="推荐">
           <el-select v-model="categoryForm.recommend">
             <el-option label="否" :value="0"></el-option>
@@ -335,12 +376,10 @@ export default {
   name: 'KmsKnowledge',
   data() {
     return {
-
-      relatedCategories: [],
+      id2name: {},
+      relatedCategory: [],
       tableHeight: 400, // 先声明为响应式，避免 warn
-
       categoryTree: [],
-
       flatCategories: [],
       currentCategoryId: null,
       categoryDialogVisible: false,
@@ -353,26 +392,30 @@ export default {
         status: 1,
         remark: ''
       },
-      showParentSelect: false,
-
+      // ...
       queryForm: {
+        categoryIds: [],       // ✅ 存 id，发后端最稳
         title: '',
-        keywords: '',
-        status: undefined,
-        // categoryName: '',    // 删掉
-        categoryNames: [],      // ✅ 多选用数组
         tagName: '',
+        status: undefined,
         visibilityName: '',
         questionNo: null,
-        created: []
+        createdAt: '',
       },
-
+      cascaderProps: {
+        multiple: true,        // ✅ 多选
+        checkStrictly: true,   // ✅ 父子不互相关联，想选就选
+        emitPath: false,       // ✅ 只返回选中节点的 id，不返回整条路径
+        value: 'id',
+        label: 'name',
+        children: 'children'
+      },
       tagOptions: [],
       visibilityOptions: [],
       tableData: [],
       pagination: {
         page: 1,
-        page_size: 10,
+        pageSize: 10,
         total: 0
       },
       multipleSelection: [],
@@ -401,97 +444,124 @@ export default {
 
   computed: {
     categoryNamesText() {
-      return (this.queryForm.categoryNames || []).join('、')
+      const tree = this.$refs.catTree
+      if (!tree) return ''
+      return tree.getCheckedNodes().map(n => n.name).join('、')
     }
   },
 
   created() {
-    this.fetchCategoryTree()
-    this.loadTags()
-    this.loadVisibilities()
-    this.loadRelatedCategories();
+    // 先自动获取左侧的树
+    this.loadCategoryTree()
+    // 获取相关类目
+    this.loadRelatedCategory()
+    // 获取右下的这个知识列表
+    this.loadKnowledgeList()
+    // 获取标签
+    this.loadTag()
+    // 获取可见度
+    this.loadVisibility()
   },
-
-// 保留：mounted 只做高度计算与事件绑定
   mounted() {
+    // 保留：mounted 只做高度计算与事件绑定
     this.$nextTick(() => {
       this.computeHeight()
       window.addEventListener('resize', this.computeHeight)
     })
   },
-
   beforeDestroy() {
     window.removeEventListener('resize', this.computeHeight)
   },
-
   methods: {
-
-    async loadRelatedCategories() {
-      try {
-        const data = await getRelatedCategories();
-        this.relatedCategories = data
-        console.log("from loadRelatedCategories")
-        console.log(data)
-      } catch (e) {
-        this.$message.error(e.message)
-      }
+    syncTreeChecks() {
+      this.$nextTick(() => {
+        if (this.$refs.catTree) {
+          this.$refs.catTree.setCheckedKeys(this.queryForm.categoryIds || [])
+        }
+      })
+    },
+    // 勾选变化时，收集所有勾选节点 id（也可限制为叶子：getCheckedKeys(true)）
+    onCatCheckChange() {
+      const tree = this.$refs.catTree
+      this.queryForm.categoryIds = tree ? tree.getCheckedKeys() : []
     },
 
+    // 点击标签上的 × 直接移除，同时反勾选树
+    removeCat(id) {
+      const tree = this.$refs.catTree
+      this.queryForm.categoryIds = (this.queryForm.categoryIds || []).filter(x => x !== id)
+      if (tree) tree.setChecked(id, false, true)
+    },
+
+    // onCatCheckChange() {
+    //   const tree = this.$refs.catTree
+    //   this.queryForm.categoryIds = tree.getCheckedKeys()
+    //   // 如果你也想保持名称数组，可加：
+    //   // this.queryForm.categoryNames = tree.getCheckedNodes().map(n => n.name)
+    // },
+    // loadKnowledgeList 同方案A，传 relatedCategoryIds: this.queryForm.categoryIds
+    // 计算高度什么的，我不懂，也不需要动
     computeHeight() {
       // 取表格真实顶部位置
       const tableEl = this.$refs.table && this.$refs.table.$el
       if (!tableEl) return
       const top = tableEl.getBoundingClientRect().top
-
       // 分页区高度（没有则为 0）
       const pagerH = this.$refs.pager ? this.$refs.pager.offsetHeight : 0
-
       // 底部留空隙，避免紧贴底边
       const gap = 12
-
       // 直接用视口高度计算可用空间
       const h = window.innerHeight - top - pagerH - gap
-
       // 最小高度兜底，避免极端情况下过小
       this.tableHeight = Math.max(h, 240)
     },
-
+    // 获取相关类目
+    async loadRelatedCategory() {
+      try {
+        const data = await getRelatedCategories();
+        this.relatedCategory = data
+        console.log("from loadRelatedCategory")
+        console.log(data)
+      } catch (e) {
+        this.$message.error(e.message)
+      }
+    },
     // 这是他妈的获取左侧的那棵树的
-    async fetchCategoryTree() {
+    // 覆盖你现有的 loadCategoryTree，把 id2name 填好
+    async loadCategoryTree() {
       try {
         const data = await http.get('/category/tree')
-        console.log("fetchCategoryTree")
-        console.log(data)
         this.categoryTree = data || []
         this.flatCategories = []
+        this.id2name = {}
         const walk = (nodes) => {
           nodes.forEach(n => {
             this.flatCategories.push({id: n.id, name: n.name})
+            this.id2name[n.id] = n.name                // <== 建立映射
             if (n.children) walk(n.children)
           })
         }
         walk(this.categoryTree)
+        // 其余保持你的原逻辑...
         if (this.categoryTree.length && !this.currentCategoryId) {
           this.currentCategoryId = this.categoryTree[0].id
           this.$nextTick(() => {
             this.$refs.categoryTree.setCurrentKey(this.currentCategoryId)
           })
-
-          await this.fetchList()
         }
+        await this.loadRelatedCategory()
       } catch (e) {
         this.$message.error(e.message)
       }
     },
-
+    // 点击之后获取到当前的这个category的id值
     handleCategoryClick(data) {
       this.currentCategoryId = data.id
-      this.pagination.page = 1
-      this.fetchList()
     },
-
+    // 打开这个对话框，新增类目
     openCategoryDialog(parent) {
-      this.categoryDialogTitle = parent ? '新增类目' : '新建类目'
+      this.categoryDialogTitle = '新增类目'
+      // parent ? '新增类目' : '新建类目'
       this.showParentSelect = false
       this.categoryForm = {
         id: null,
@@ -503,7 +573,7 @@ export default {
       }
       this.categoryDialogVisible = true
     },
-
+    // 修改这个category的名称
     renameCategory(data) {
       this.categoryDialogTitle = '重命名类目'
       this.categoryForm = {
@@ -511,10 +581,9 @@ export default {
         parentId: data.parentId || data.parent_id || null
       }
       delete this.categoryForm.parent_id
-      this.showParentSelect = true
       this.categoryDialogVisible = true
     },
-
+    // 这个是提交按钮，无论你是修改还是新增
     async submitCategory() {
       this.$refs.categoryForm.validate(async valid => {
         if (!valid) return
@@ -523,28 +592,28 @@ export default {
           await http.post(url, this.categoryForm)
           this.$message.success('操作成功')
           this.categoryDialogVisible = false
-          this.fetchCategoryTree()
-          this.loadRelatedCategories()
+          await this.loadCategoryTree()
+          await this.loadRelatedCategory()
         } catch (e) {
           this.$message.error(e.message)
         }
       })
     },
-
+    // 这个是category的删除按钮
     async deleteCategory(data) {
       this.$confirm('确定删除该类目吗？', '提示', {type: 'warning'}).then(async () => {
         try {
           await http.post('/category/delete', {id: data.id})
           this.$message.success('删除成功')
-          this.fetchCategoryTree()
+          await this.loadCategoryTree()
         } catch (e) {
           this.$message.error(e.message)
         }
       }).catch(() => {
       })
     },
-
-    async toggleCategoryStatus(data) {
+    // 更新状态，就是那个按钮的操作，
+    async updateCategoryStatusByButton(data) {
       try {
         await http.post('/category/status', {id: data.id, status: data.status})
         this.$message.success('操作成功')
@@ -553,55 +622,71 @@ export default {
         data.status = data.status === 1 ? 0 : 1
       }
     },
-
-    resetQuery() {
-      this.queryForm = {
-        keywords: '',
-        status: undefined,
-        categoryName: '',
-        tagName: '',
-        visibilityName: '',
-        questionNo: null,
-        created: []
-      }
-      this.pagination.page = 1
-      this.fetchList()
-    },
+    //
+    //
+    //
+    //
+    //
+    // 接下来是他妈的右侧的这帮东西我操你妈的真难写
+    //
+    //
+    //
+    //
+    //
+    //
+    // 处理选择？？不在乎这个，不用管
     handleSelectionChange(val) {
       this.multipleSelection = val
     },
-
-    /*
-    这它妈就是搜索的那个按钮
-     */
-    async fetchList() {
+    // 搜索框的重置按钮
+    resetQuery() {
+      this.queryForm = {
+        // 第1个参数
+        categoryNames: [],      // ✅ 多选用数组
+        // 第2个参数
+        title: '',
+        // 第3个参数
+        tagName: '',
+        // 第4个参数
+        status: undefined,
+        // 第5个参数
+        visibilityName: '',
+        // 第6个参数
+        questionNo: null,
+        // 第7个参数
+        createdAt: '',
+      }
+      this.pagination.page = 1
+      this.loadKnowledgeList()
+    },
+    //这它妈就是搜索的那个按钮
+    async loadKnowledgeList() {
       const params = {
-        page: this.pagination.page,
-        page_size: this.pagination.page_size,
-
-        //category_id: this.currentCategoryId,
-        relatedCategories: this.queryForm.categoryNames,
+        relatedCategoryIds: this.queryForm.categoryIds,
+        // relatedCategoryIds: this.queryForm.categoryIds,  // ✅
         title: this.queryForm.title,
-        tag: this.queryForm.tag,
+        tagName: this.queryForm.tagName,
         status: this.queryForm.status,
         visibilityName: this.queryForm.visibilityName,
         questionNo: this.queryForm.questionNo,
-
-        // 日期
-        startDate: this.queryForm.created && this.queryForm.created[0],
-        endDate: this.queryForm.created && this.queryForm.created[1]
+        createdAt: this.queryForm.createdAt,
+        page: this.pagination.page,
+        pageSize: this.pagination.pageSize,
       }
       try {
+        // 这里调用的不是search接口。
+        // 按说应该是调用search接口的
         const data = await getKnowledgeList(params)
+        // console.log("loadKnowledgeList----------------------")
+        // console.log(data)
+        // console.log(data.records)
         this.tableData = data.records
-        console.log("fetchList")
-        console.log(this.tableData)
         this.pagination.total = data.total
       } catch (e) {
         this.$message.error(e.message)
       }
     },
-
+    // ？？？？？
     async openKnowledgeDialog(row) {
       if (row && row.id) {
         this.knowledgeDialogTitle = '编辑知识'
@@ -680,7 +765,7 @@ export default {
           }
           this.$message.success('操作成功')
           this.knowledgeDialogVisible = false
-          this.fetchList()
+          this.loadKnowledgeList()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -692,7 +777,7 @@ export default {
         try {
           await deleteKnowledgeApi(row.id)
           this.$message.success('删除成功')
-          this.fetchList()
+          this.loadKnowledgeList()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -707,7 +792,7 @@ export default {
         try {
           await batchDeleteKnowledge(ids)
           this.$message.success('删除成功')
-          this.fetchList()
+          this.loadKnowledgeList()
         } catch (e) {
           this.$message.error(e.message)
         }
@@ -744,7 +829,7 @@ export default {
       })
     },
 
-    async loadTags() {
+    async loadTag() {
       try {
         this.tagOptions = await getAllTags() || []
       } catch (e) {
@@ -752,7 +837,7 @@ export default {
       }
     },
 
-    async loadVisibilities() {
+    async loadVisibility() {
       try {
         this.visibilityOptions = await getAllVisibilities() || []
       } catch (e) {
@@ -810,6 +895,34 @@ export default {
 </script>
 
 <style scoped>
+/* 标签输入样式：看起来像 el-input，支持自动增高换行 */
+.tag-input {
+  min-height: 40px;
+  max-height: 140px; /* 选得特别多时，限制一下最高度 */
+  overflow-y: auto; /* 超出滚动，避免把页面撑太长 */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap; /* 允许换行 */
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  cursor: text;
+  box-sizing: border-box;
+}
+
+.tag-input:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.tag-input .placeholder {
+  color: #c0c4cc;
+}
+
+.tag-chip {
+  margin: 2px 4px 2px 0;
+}
 
 /* 让选择框高度自适应、标签可换行并留点间距 */
 .full-tags .el-input__inner {
@@ -906,6 +1019,22 @@ export default {
 .pager {
   padding: 10px 0;
   text-align: right;
+}
+
+.filter-row-1 { margin-bottom: 8px; }
+.filter-row-2 { margin-top: 0; }
+
+/* 让“关联类目”这一行横向排布 */
+.filter-row-1 .el-form-item__content {
+  display: flex;
+  align-items: center;
+}
+
+/* 让可点输入框和 el-tag 同行显示 */
+.tag-input {
+  display: inline-flex;   /* 原来是 flex -> 改成 inline-flex */
+  margin-left: 8px;       /* 和“关联类目”留点间距 */
+  vertical-align: middle;
 }
 </style>
 
