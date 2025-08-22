@@ -39,52 +39,30 @@
       </span>
     </el-tree>
 
-    <el-dialog :title="categoryDialogTitle" :visible.sync="categoryDialogVisible" append-to-body>
-      <el-form :model="categoryForm" ref="categoryForm" label-width="80px">
-        <el-form-item
-          label="名称"
-          prop="name"
-          :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]"
-        >
-          <el-input v-model="categoryForm.name" />
-        </el-form-item>
-        <el-form-item label="推荐">
-          <el-select v-model="categoryForm.recommend">
-            <el-option label="否" :value="0" />
-            <el-option label="是" :value="1" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="categoryForm.status">
-            <el-option label="启用" :value="1" />
-            <el-option label="停用" :value="0" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="categoryForm.remark" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer">
-        <el-button @click="categoryDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitCategory">确定</el-button>
-      </div>
-    </el-dialog>
-
-    <el-dialog title="类目详情" :visible.sync="categoryDetailDialogVisible" append-to-body>
-      <el-form label-width="80px">
-        <el-form-item label="名称">{{ categoryDetail.name }}</el-form-item>
-        <el-form-item label="备注">{{ categoryDetail.remark }}</el-form-item>
-      </el-form>
-    </el-dialog>
+    <CategoryDialog
+      :visible="categoryDialogVisible"
+      :title="categoryDialogTitle"
+      :formData="categoryForm"
+      @submit="submitCategory"
+      @close="categoryDialogVisible = false"
+    />
+    <CategoryDetailDialog
+      :visible="categoryDetailDialogVisible"
+      :detail-data="categoryDetail"
+      @close="categoryDetailDialogVisible = false"
+    />
   </el-aside>
 </template>
 
 <script>
 import http from '../api/http'
 import { getCategory } from '@/api/category'
+import CategoryDialog from './CategoryDialog.vue'
+import CategoryDetailDialog from './CategoryDetailDialog.vue'
 
 export default {
   name: 'CategoryTree',
+  components: { CategoryDialog, CategoryDetailDialog },
   props: {
     categoryTree: {
       type: Array,
@@ -149,18 +127,14 @@ export default {
       delete this.categoryForm.parent_id
       this.categoryDialogVisible = true
     },
-    submitCategory() {
-      this.$refs.categoryForm.validate(async valid => {
-        if (!valid) return
-        try {
-          const url = this.categoryForm.id ? '/category/update' : '/category/create'
-          await http.post(url, this.categoryForm)
-          this.$message.success('操作成功')
-          this.categoryDialogVisible = false
-          this.$emit('refresh')
-        } catch (e) {
-          this.$message.error(e.message)
-        }
+    submitCategory(form) {
+      const url = form.id ? '/category/update' : '/category/create'
+      http.post(url, form).then(() => {
+        this.$message.success('操作成功')
+        this.categoryDialogVisible = false
+        this.$emit('refresh')
+      }).catch(e => {
+        this.$message.error(e.message)
       })
     },
     async deleteCategory(data) {
