@@ -16,5 +16,7 @@ public class KnowledgeQueryReq extends PageReq {   // PageReq 含 page, pageSize
     private String visibilityName;
     private Integer questionNo;
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate createdDate;
+    private LocalDate startDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
 }

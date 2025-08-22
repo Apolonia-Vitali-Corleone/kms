@@ -96,6 +96,24 @@ public class KnowledgeServiceImpl implements KnowledgeService {
     }
 
     @Override
+    public IPage<KnowledgeDO> page(KnowledgeQueryReq req) {
+        Page<KnowledgeDO> page = new Page<>(req.getPage(), req.getPageSize());
+
+        KnowledgeFilterParam p = new KnowledgeFilterParam();
+        p.setTitle(req.getTitle());
+        p.setKeywords(req.getKeywords());
+        p.setStatus(req.getStatus());
+        p.setRelatedCategories(req.getRelatedCategories());
+        p.setTagName(req.getTagName());
+        p.setVisibilityName(req.getVisibilityName());
+        p.setQuestionNo(req.getQuestionNo());
+        p.setStartDate(req.getStartDate());
+        p.setEndDate(req.getEndDate());
+
+        return knowledgeMapper.selectPageByFilters(page, p);
+    }
+
+    @Override
     public KnowledgeDO get(Long id) {
         KnowledgeDO entity = knowledgeMapper.selectById(id);
         AttachmentDTO attachments = attachmentService.getByKId(id);
