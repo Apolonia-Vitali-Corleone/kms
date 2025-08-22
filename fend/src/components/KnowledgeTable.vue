@@ -70,10 +70,10 @@ export default {
     }
   },
   data() {
-    const { state, loadKnowledgeList } = useKnowledge()
+    const { state, search } = useKnowledge()
     return {
       knowledgeState: state,
-      fetchKnowledgeList: loadKnowledgeList,
+      search,
       tableHeight: 400
     }
   },
@@ -110,7 +110,7 @@ export default {
       this.$emit('selection-change', val)
     },
     async loadData() {
-      await this.fetchKnowledgeList({ ...this.filters })
+      await this.search({ ...this.filters })
       this.$emit('pagination-change', { ...this.knowledgeState.pagination })
     }
   }
